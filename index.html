@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meiosis: The Genetic Shuffler</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-900 text-white">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const stages = [
+      "Prophase I", "Metaphase I", "Anaphase I", "Telophase I",
+      "Prophase II", "Metaphase II", "Anaphase II", "Telophase II"
+    ];
+
+    function App() {
+      const [currentStage, setCurrentStage] = useState(stages[0]);
+      const [chromosomes, setChromosomes] = useState([]);
+      const [quizScore, setQuizScore] = useState(null);
+      const [mode, setMode] = useState("meiosis");
+
+      const addChromosome = (color) => {
+        setChromosomes([...chromosomes, { id: Date.now(), color }]);
+      };
+
+      const removeChromosome = (id) => {
+        setChromosomes(chromosomes.filter(c => c.id !== id));
+      };
+
+      const randomize = () => {
+        setChromosomes([...chromosomes].sort(() => Math.random() - 0.5));
+      };
+
+      const runQuiz = () => {
+        let score = 0;
+        if (confirm("Does meiosis create genetic variation?")) score++;
+        if (!confirm("Are daughter cells identical?")) score++;
+        setQuizScore(score + "/2");
+      };
+
+      return (
+        <div className="p-4">
+          <h1 className="text-3xl font-bold text-purple-400 mb-4">🧬 Meiosis: The Genetic Shuffler</h1>
+
+          {/* Toggle */}
+          <div className="mb-4">
+            <button onClick={() => setMode("meiosis")} className="mr-2 px-3 py-1 bg-purple-600 rounded">Meiosis</button>
+            <button onClick={() => setMode("mitosis")} className="px-3 py-1 bg-blue-600 rounded">Mitosis</button>
+          </div>
+
+          {/* Stage Navigation */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {stages.map(stage => (
+              <button key={stage} onClick={() => setCurrentStage(stage)} className="px-2 py-1 bg-gray-700 rounded hover:bg-purple-500">
+                {stage}
+              </button>
+            ))}
+          </div>
+
+          {/* Main Panel */}
+          <div className="grid grid-cols-4 gap-4">
+
+            {/* Toolbox */}
+            <div className="bg-gray-800 p-3 rounded">
+              <h2 className="font-bold mb-2">🧪 Toolbox</h2>
+              <button onClick={() => addChromosome("red")} className="block mb-2 bg-red-500 px-2 py-1 rounded">Add Red Chromosome</button>
+              <button onClick={() => addChromosome("blue")} className="block mb-2 bg-blue-500 px-2 py-1 rounded">Add Blue Chromosome</button>
+              <button onClick={randomize} className="bg-yellow-500 px-2 py-1 rounded">Shuffle (Independent Assortment)</button>
+            </div>
+
+            {/* Workspace */}
+            <div className="col-span-2 bg-gray-800 p-3 rounded">
+              <h2 className="font-bold mb-2">🔬 Cell Workspace ({currentStage})</h2>
+              <div className="flex gap-2 flex-wrap">
+                {chromosomes.map(c => (
+                  <div
+                    key={c.id}
+                    onClick={() => removeChromosome(c.id)}
+                    style={{ backgroundColor: c.color }}
+                    className="w-10 h-16 cursor-pointer rounded"
+                  ></div>
+                ))}
+              </div>
+
+              <p className="mt-3 text-sm text-gray-300">
+                {currentStage === "Prophase I" && "Chromosomes pair and crossing over occurs."}
+                {currentStage === "Metaphase I" && "Chromosomes align at the center."}
+                {currentStage === "Anaphase I" && "Homologous chromosomes separate."}
+                {currentStage === "Telophase II" && "Four haploid cells are formed."}
+              </p>
+            </div>
+
+            {/* Side Panel */}
+            <div className="bg-gray-800 p-3 rounded">
+              <h2 className="font-bold mb-2">🎮 Actions</h2>
+              <button onClick={runQuiz} className="block mb-2 bg-green-600 px-2 py-1 rounded">Run Quiz</button>
+              <button onClick={() => alert("Genetic variation helps species survive!")}
+                className="bg-indigo-500 px-2 py-1 rounded">Why does this matter?</button>
+
+              {quizScore && <p className="mt-2">Score: {quizScore}</p>}
+            </div>
+          </div>
+
+          {/* Challenge Mode */}
+          <div className="mt-6 bg-gray-800 p-4 rounded">
+            <h2 className="font-bold mb-2">⚠️ Challenge: Mutation Fix</h2>
+            <p className="text-sm text-gray-300 mb-2">A nondisjunction error occurred. Fix the chromosome count!</p>
+            <button onClick={() => alert("Hint: Cells should be haploid!")}
+              className="bg-red-600 px-3 py-1 rounded">Get Hint</button>
+          </div>
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
