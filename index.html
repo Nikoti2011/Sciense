@@ -13,109 +13,132 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect } = React;
 
     const stages = [
       "Prophase I", "Metaphase I", "Anaphase I", "Telophase I",
       "Prophase II", "Metaphase II", "Anaphase II", "Telophase II"
     ];
 
+    const descriptions = {
+      "Prophase I": "Chromosomes pair and CROSS OVER (swap DNA).",
+      "Metaphase I": "Pairs line up in the middle randomly.",
+      "Anaphase I": "Pairs are pulled apart.",
+      "Telophase I": "2 cells form.",
+      "Prophase II": "Cells prepare again.",
+      "Metaphase II": "Chromosomes line up again.",
+      "Anaphase II": "Chromatids separate.",
+      "Telophase II": "4 UNIQUE haploid cells form."
+    };
+
     function App() {
-      const [currentStage, setCurrentStage] = useState(stages[0]);
-      const [chromosomes, setChromosomes] = useState([]);
-      const [quizScore, setQuizScore] = useState(null);
-      const [mode, setMode] = useState("meiosis");
+      const [stageIndex, setStageIndex] = useState(0);
+      const [autoPlay, setAutoPlay] = useState(true);
+      const [chromosomes, setChromosomes] = useState([
+        { id: 1, x: 50, y: 80, color: "#ef4444" },
+        { id: 2, x: 120, y: 80, color: "#3b82f6" }
+      ]);
 
-      const addChromosome = (color) => {
-        setChromosomes([...chromosomes, { id: Date.now(), color }]);
-      };
+      const currentStage = stages[stageIndex];
 
-      const removeChromosome = (id) => {
-        setChromosomes(chromosomes.filter(c => c.id !== id));
-      };
+      // AUTO PROGRESSION
+      useEffect(() => {
+        if (!autoPlay) return;
+        const interval = setInterval(() => {
+          setStageIndex((prev) => (prev + 1) % stages.length);
+        }, 2500);
+        return () => clearInterval(interval);
+      }, [autoPlay]);
 
-      const randomize = () => {
-        setChromosomes([...chromosomes].sort(() => Math.random() - 0.5));
-      };
+      // ANIMATION LOGIC
+      useEffect(() => {
+        let updated = [...chromosomes];
 
-      const runQuiz = () => {
-        let score = 0;
-        if (confirm("Does meiosis create genetic variation?")) score++;
-        if (!confirm("Are daughter cells identical?")) score++;
-        setQuizScore(score + "/2");
-      };
+        if (currentStage === "Metaphase I") {
+          updated.forEach((c, i) => {
+            c.x = 80 + i * 40;
+            c.y = 100;
+          });
+        }
+
+        if (currentStage === "Anaphase I") {
+          updated.forEach((c, i) => {
+            c.x = i === 0 ? 20 : 160;
+          });
+        }
+
+        if (currentStage === "Telophase II") {
+          updated = [
+            { id: 1, x: 20, y: 50, color: "#ef4444" },
+            { id: 2, x: 160, y: 50, color: "#3b82f6" },
+            { id: 3, x: 20, y: 140, color: "#a855f7" },
+            { id: 4, x: 160, y: 140, color: "#22c55e" }
+          ];
+        }
+
+        setChromosomes(updated);
+      }, [currentStage]);
 
       return (
-        <div className="p-4">
-          <h1 className="text-3xl font-bold text-purple-400 mb-4">🧬 Meiosis: The Genetic Shuffler</h1>
+        <div className="p-6">
+          <h1 className="text-3xl font-bold text-purple-400 mb-4">
+            🧬 Meiosis: The Genetic Shuffler
+          </h1>
 
-          {/* Toggle */}
-          <div className="mb-4">
-            <button onClick={() => setMode("meiosis")} className="mr-2 px-3 py-1 bg-purple-600 rounded">Meiosis</button>
-            <button onClick={() => setMode("mitosis")} className="px-3 py-1 bg-blue-600 rounded">Mitosis</button>
+          {/* Controls */}
+          <div className="mb-4 flex gap-2">
+            <button
+              onClick={() => setAutoPlay(!autoPlay)}
+              className="bg-purple-600 px-3 py-1 rounded"
+            >
+              {autoPlay ? "Pause" : "Play"}
+            </button>
+
+            <button
+              onClick={() => setStageIndex((stageIndex + 1) % stages.length)}
+              className="bg-blue-600 px-3 py-1 rounded"
+            >
+              Next Stage
+            </button>
           </div>
 
-          {/* Stage Navigation */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {stages.map(stage => (
-              <button key={stage} onClick={() => setCurrentStage(stage)} className="px-2 py-1 bg-gray-700 rounded hover:bg-purple-500">
-                {stage}
-              </button>
+          {/* Stage Indicator */}
+          <div className="mb-4">
+            <h2 className="text-xl font-bold">{currentStage}</h2>
+            <p className="text-gray-300">{descriptions[currentStage]}</p>
+          </div>
+
+          {/* Cell Visualization */}
+          <div className="relative w-full h-64 bg-gray-800 rounded overflow-hidden">
+            {chromosomes.map(c => (
+              <div
+                key={c.id}
+                className="absolute w-6 h-12 rounded transition-all duration-700"
+                style={{
+                  left: c.x,
+                  top: c.y,
+                  backgroundColor: c.color
+                }}
+              />
             ))}
           </div>
 
-          {/* Main Panel */}
-          <div className="grid grid-cols-4 gap-4">
-
-            {/* Toolbox */}
-            <div className="bg-gray-800 p-3 rounded">
-              <h2 className="font-bold mb-2">🧪 Toolbox</h2>
-              <button onClick={() => addChromosome("red")} className="block mb-2 bg-red-500 px-2 py-1 rounded">Add Red Chromosome</button>
-              <button onClick={() => addChromosome("blue")} className="block mb-2 bg-blue-500 px-2 py-1 rounded">Add Blue Chromosome</button>
-              <button onClick={randomize} className="bg-yellow-500 px-2 py-1 rounded">Shuffle (Independent Assortment)</button>
-            </div>
-
-            {/* Workspace */}
-            <div className="col-span-2 bg-gray-800 p-3 rounded">
-              <h2 className="font-bold mb-2">🔬 Cell Workspace ({currentStage})</h2>
-              <div className="flex gap-2 flex-wrap">
-                {chromosomes.map(c => (
-                  <div
-                    key={c.id}
-                    onClick={() => removeChromosome(c.id)}
-                    style={{ backgroundColor: c.color }}
-                    className="w-10 h-16 cursor-pointer rounded"
-                  ></div>
-                ))}
-              </div>
-
-              <p className="mt-3 text-sm text-gray-300">
-                {currentStage === "Prophase I" && "Chromosomes pair and crossing over occurs."}
-                {currentStage === "Metaphase I" && "Chromosomes align at the center."}
-                {currentStage === "Anaphase I" && "Homologous chromosomes separate."}
-                {currentStage === "Telophase II" && "Four haploid cells are formed."}
-              </p>
-            </div>
-
-            {/* Side Panel */}
-            <div className="bg-gray-800 p-3 rounded">
-              <h2 className="font-bold mb-2">🎮 Actions</h2>
-              <button onClick={runQuiz} className="block mb-2 bg-green-600 px-2 py-1 rounded">Run Quiz</button>
-              <button onClick={() => alert("Genetic variation helps species survive!")}
-                className="bg-indigo-500 px-2 py-1 rounded">Why does this matter?</button>
-
-              {quizScore && <p className="mt-2">Score: {quizScore}</p>}
-            </div>
+          {/* Progress Bar */}
+          <div className="mt-4 w-full bg-gray-700 h-2 rounded">
+            <div
+              className="bg-purple-500 h-2 rounded"
+              style={{ width: `${(stageIndex / (stages.length - 1)) * 100}%` }}
+            />
           </div>
 
-          {/* Challenge Mode */}
+          {/* Explanation Boost */}
           <div className="mt-6 bg-gray-800 p-4 rounded">
-            <h2 className="font-bold mb-2">⚠️ Challenge: Mutation Fix</h2>
-            <p className="text-sm text-gray-300 mb-2">A nondisjunction error occurred. Fix the chromosome count!</p>
-            <button onClick={() => alert("Hint: Cells should be haploid!")}
-              className="bg-red-600 px-3 py-1 rounded">Get Hint</button>
+            <h2 className="font-bold mb-2">🧠 Why this matters</h2>
+            <p className="text-sm text-gray-300">
+              Meiosis creates genetic variation through crossing over and independent assortment.
+              This is why siblings look different and why evolution happens.
+            </p>
           </div>
-
         </div>
       );
     }
