@@ -21,62 +21,79 @@
     ];
 
     const descriptions = {
-      "Prophase I": "Chromosomes pair and CROSS OVER (swap DNA).",
-      "Metaphase I": "Pairs line up in the middle randomly.",
-      "Anaphase I": "Pairs are pulled apart.",
-      "Telophase I": "2 cells form.",
-      "Prophase II": "Cells prepare again.",
-      "Metaphase II": "Chromosomes line up again.",
-      "Anaphase II": "Chromatids separate.",
-      "Telophase II": "4 UNIQUE haploid cells form."
+      "Prophase I": "Click chromosomes to CROSS OVER (swap colors).",
+      "Metaphase I": "Click to align chromosomes in the center.",
+      "Anaphase I": "Click to separate homologous chromosomes.",
+      "Telophase I": "Cells split into two.",
+      "Prophase II": "Prepare second division.",
+      "Metaphase II": "Align again.",
+      "Anaphase II": "Separate chromatids.",
+      "Telophase II": "4 unique haploid cells form."
     };
 
     function App() {
       const [stageIndex, setStageIndex] = useState(0);
-      const [autoPlay, setAutoPlay] = useState(true);
       const [chromosomes, setChromosomes] = useState([
-        { id: 1, x: 50, y: 80, color: "#ef4444" },
-        { id: 2, x: 120, y: 80, color: "#3b82f6" }
+        { id: 1, x: 60, y: 80, color: "#ef4444" },
+        { id: 2, x: 140, y: 80, color: "#3b82f6" }
       ]);
+      const [selected, setSelected] = useState([]);
 
       const currentStage = stages[stageIndex];
 
-      // AUTO PROGRESSION
-      useEffect(() => {
-        if (!autoPlay) return;
-        const interval = setInterval(() => {
-          setStageIndex((prev) => (prev + 1) % stages.length);
-        }, 2500);
-        return () => clearInterval(interval);
-      }, [autoPlay]);
+      const nextStage = () => {
+        setStageIndex((prev) => (prev + 1) % stages.length);
+      };
 
-      // ANIMATION LOGIC
-      useEffect(() => {
-        let updated = [...chromosomes];
+      const handleChromosomeClick = (id) => {
+        if (currentStage === "Prophase I") {
+          let newSelected = [...selected];
+          if (newSelected.includes(id)) {
+            newSelected = newSelected.filter(s => s !== id);
+          } else {
+            newSelected.push(id);
+          }
+
+          if (newSelected.length === 2) {
+            const [a, b] = newSelected;
+            const updated = chromosomes.map(c => {
+              if (c.id === a) return { ...c, color: chromosomes.find(x => x.id === b).color };
+              if (c.id === b) return { ...c, color: chromosomes.find(x => x.id === a).color };
+              return c;
+            });
+            setChromosomes(updated);
+            newSelected = [];
+          }
+
+          setSelected(newSelected);
+        }
 
         if (currentStage === "Metaphase I") {
-          updated.forEach((c, i) => {
-            c.x = 80 + i * 40;
-            c.y = 100;
-          });
+          setChromosomes(chromosomes.map((c, i) => ({ ...c, x: 90 + i * 40, y: 100 })));
         }
 
         if (currentStage === "Anaphase I") {
-          updated.forEach((c, i) => {
-            c.x = i === 0 ? 20 : 160;
-          });
+          setChromosomes(chromosomes.map((c, i) => ({ ...c, x: i === 0 ? 30 : 170 })));
         }
 
+        if (currentStage === "Metaphase II") {
+          setChromosomes(chromosomes.map((c, i) => ({ ...c, y: 100 })));
+        }
+
+        if (currentStage === "Anaphase II") {
+          setChromosomes(chromosomes.map((c, i) => ({ ...c, y: i % 2 === 0 ? 40 : 160 })));
+        }
+      };
+
+      useEffect(() => {
         if (currentStage === "Telophase II") {
-          updated = [
-            { id: 1, x: 20, y: 50, color: "#ef4444" },
-            { id: 2, x: 160, y: 50, color: "#3b82f6" },
-            { id: 3, x: 20, y: 140, color: "#a855f7" },
-            { id: 4, x: 160, y: 140, color: "#22c55e" }
-          ];
+          setChromosomes([
+            { id: 1, x: 30, y: 40, color: "#ef4444" },
+            { id: 2, x: 170, y: 40, color: "#3b82f6" },
+            { id: 3, x: 30, y: 160, color: "#a855f7" },
+            { id: 4, x: 170, y: 160, color: "#22c55e" }
+          ]);
         }
-
-        setChromosomes(updated);
       }, [currentStage]);
 
       return (
@@ -87,58 +104,43 @@
 
           {/* Controls */}
           <div className="mb-4 flex gap-2">
-            <button
-              onClick={() => setAutoPlay(!autoPlay)}
-              className="bg-purple-600 px-3 py-1 rounded"
-            >
-              {autoPlay ? "Pause" : "Play"}
-            </button>
-
-            <button
-              onClick={() => setStageIndex((stageIndex + 1) % stages.length)}
-              className="bg-blue-600 px-3 py-1 rounded"
-            >
-              Next Stage
+            <button onClick={nextStage} className="bg-purple-600 px-3 py-1 rounded">
+              Next Step ▶
             </button>
           </div>
 
-          {/* Stage Indicator */}
+          {/* Stage Info */}
           <div className="mb-4">
             <h2 className="text-xl font-bold">{currentStage}</h2>
             <p className="text-gray-300">{descriptions[currentStage]}</p>
           </div>
 
-          {/* Cell Visualization */}
-          <div className="relative w-full h-64 bg-gray-800 rounded overflow-hidden">
+          {/* Cell */}
+          <div className="relative w-full h-72 bg-gray-800 rounded overflow-hidden border border-gray-700">
             {chromosomes.map(c => (
               <div
                 key={c.id}
-                className="absolute w-6 h-12 rounded transition-all duration-700"
+                onClick={() => handleChromosomeClick(c.id)}
+                className="absolute w-6 h-12 rounded cursor-pointer transition-all duration-500 hover:scale-110"
                 style={{
                   left: c.x,
                   top: c.y,
-                  backgroundColor: c.color
+                  backgroundColor: c.color,
+                  outline: selected.includes(c.id) ? "2px solid white" : "none"
                 }}
               />
             ))}
           </div>
 
-          {/* Progress Bar */}
-          <div className="mt-4 w-full bg-gray-700 h-2 rounded">
-            <div
-              className="bg-purple-500 h-2 rounded"
-              style={{ width: `${(stageIndex / (stages.length - 1)) * 100}%` }}
-            />
-          </div>
-
-          {/* Explanation Boost */}
+          {/* Guidance */}
           <div className="mt-6 bg-gray-800 p-4 rounded">
-            <h2 className="font-bold mb-2">🧠 Why this matters</h2>
+            <h2 className="font-bold mb-2">🧠 What to do</h2>
             <p className="text-sm text-gray-300">
-              Meiosis creates genetic variation through crossing over and independent assortment.
-              This is why siblings look different and why evolution happens.
+              Follow the instructions above. Click chromosomes to interact and simulate each stage.
+              Try to understand HOW chromosomes move and WHY cells become different.
             </p>
           </div>
+
         </div>
       );
     }
