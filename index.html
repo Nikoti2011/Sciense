@@ -1,151 +1,1330 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meiosis: The Genetic Shuffler</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Gene Journey: A Meiosis Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #2a3a55;
+    --accent: #7c3aed;
+    --accent2: #06b6d4;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --chr1: #7c3aed;
+    --chr1light: #a78bfa;
+    --chr2: #06b6d4;
+    --chr2light: #67e8f9;
+    --gene-eye: #3b82f6;
+    --gene-hair: #92400e;
+    --gene-tall: #10b981;
+    --gene-short: #f59e0b;
+    --gene-skin: #ec4899;
+    --gene-nose: #8b5cf6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 1; }
+
+  /* HEADER */
+  header {
+    padding: 24px 0 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .header-inner {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .logo-dna {
+    font-size: 2.2rem; line-height: 1;
+    animation: spin3d 6s linear infinite;
+  }
+  @keyframes spin3d {
+    0%,100% { transform: rotateY(0deg); }
+    50% { transform: rotateY(180deg); }
+  }
+  h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.5rem;
+    color: var(--text);
+  }
+  h1 span { color: var(--accent); }
+  .subtitle {
+    font-size: 0.82rem; color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* SECTIONS */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .section-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .step-badge {
+    background: var(--accent);
+    color: white; font-size: 0.65rem;
+    padding: 2px 7px; border-radius: 99px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .section-desc {
+    font-size: 0.88rem; color: var(--muted); margin-bottom: 20px;
+    max-width: 700px; line-height: 1.6;
+  }
+
+  /* GENE BANK */
+  .gene-bank {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    padding: 16px; background: var(--surface2);
+    border: 1px dashed var(--border); border-radius: 12px;
+    margin-bottom: 20px;
+  }
+  .gene-chip {
+    display: flex; align-items: center; gap: 7px;
+    padding: 8px 14px; border-radius: 99px;
+    font-size: 0.8rem; font-weight: 600;
+    cursor: grab; user-select: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .gene-chip:hover { transform: scale(1.06); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  .gene-chip:active { cursor: grabbing; transform: scale(0.97); }
+  .gene-chip.dragging { opacity: 0.4; }
+  .gene-chip.used { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+  .gene-blue-eyes  { background: rgba(59,130,246,0.15); border-color: #3b82f6; color: #93c5fd; }
+  .gene-brown-eyes { background: rgba(146,64,14,0.15); border-color: #b45309; color: #d97706; }
+  .gene-brown-hair { background: rgba(146,64,14,0.15); border-color: #92400e; color: #b45309; }
+  .gene-black-hair { background: rgba(30,30,30,0.4); border-color: #6b7280; color: #d1d5db; }
+  .gene-tall       { background: rgba(16,185,129,0.15); border-color: #10b981; color: #34d399; }
+  .gene-short      { background: rgba(245,158,11,0.15); border-color: #f59e0b; color: #fbbf24; }
+  .gene-freckles   { background: rgba(236,72,153,0.15); border-color: #ec4899; color: #f9a8d4; }
+  .gene-no-freckles { background: rgba(139,92,246,0.15); border-color: #8b5cf6; color: #c4b5fd; }
+
+  /* CHROMOSOME SETUP */
+  .chr-workspace {
+    display: flex; gap: 32px; justify-content: center; flex-wrap: wrap;
+  }
+  .chr-pair {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .chr-pair-label {
+    font-size: 0.75rem; font-family: 'Space Mono', monospace;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .chr-pair-inner { display: flex; gap: 16px; }
+  .chr-column { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .chr-arm-label { font-size: 0.7rem; color: var(--muted); }
+
+  /* Chromosome shapes */
+  .chr-shape {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 2px;
+  }
+  .chr-body {
+    width: 44px; height: 120px;
+    border-radius: 22px;
+    display: flex; flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    padding: 8px 4px;
+    position: relative;
+    transition: box-shadow 0.2s;
+  }
+  .chr-body.chr1 {
+    background: linear-gradient(180deg, var(--chr1) 0%, #5b21b6 100%);
+    box-shadow: 0 0 18px rgba(124,58,237,0.3);
+  }
+  .chr-body.chr2 {
+    background: linear-gradient(180deg, var(--chr2) 0%, #0891b2 100%);
+    box-shadow: 0 0 18px rgba(6,182,212,0.3);
+  }
+  .chr-centromere {
+    width: 100%; height: 6px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+  }
+  .locus {
+    width: 36px; height: 28px;
+    border: 2px dashed rgba(255,255,255,0.35);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 2;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: pointer;
+  }
+  .locus.drag-over {
+    border-color: white;
+    background: rgba(255,255,255,0.15);
+  }
+  .locus.filled { border-style: solid; border-color: rgba(255,255,255,0.5); }
+  .locus-gene {
+    font-size: 0.65rem; font-weight: 700;
+    color: white; text-align: center;
+    line-height: 1.1; padding: 1px;
+    pointer-events: none;
+  }
+  .chr-name {
+    font-size: 0.7rem; font-family: 'Space Mono', monospace;
+    color: var(--muted);
+  }
+
+  /* MEIOSIS STAGE */
+  .meiosis-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .meiosis-layout { grid-template-columns: 1fr; }
+  }
+
+  .stage-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+  }
+  .stage-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.1rem; color: var(--accent);
+  }
+  .stage-progress {
+    flex: 1; height: 4px; background: var(--border); border-radius: 2px;
+    overflow: hidden;
+  }
+  .stage-progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  .cell-canvas {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    min-height: 420px;
+    position: relative;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Side panel */
+  .info-panel {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    position: sticky; top: 20px;
+  }
+  .info-panel h3 {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.82rem; color: var(--accent2);
+    margin-bottom: 12px; text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .info-fact {
+    font-size: 0.83rem; line-height: 1.65;
+    color: var(--text); margin-bottom: 14px;
+  }
+  .info-fact strong { color: var(--accent); }
+  .info-fact em { color: var(--accent2); font-style: normal; font-weight: 600; }
+  .chromosome-counter {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border-radius: 8px;
+    padding: 10px 14px; margin-top: 12px;
+    font-size: 0.8rem;
+  }
+  .chr-count { font-family: 'Space Mono', monospace; font-size: 1.2rem; color: var(--green); }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 24px; border-radius: 8px; border: none;
+    font-family: 'DM Sans', sans-serif; font-weight: 700;
+    font-size: 0.9rem; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-cyan { background: var(--accent2); color: #0a0e1a; }
+  .btn-green { background: var(--green); color: #0a0e1a; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* SVG cell stage */
+  #stage-svg { width: 100%; height: 420px; }
+
+  /* Nav dots */
+  .stage-dots {
+    display: flex; gap: 6px; justify-content: center; margin-top: 12px;
+  }
+  .stage-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border); cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .stage-dot.active { background: var(--accent); transform: scale(1.3); }
+  .stage-dot.done { background: var(--green); }
+
+  /* Results */
+  .results-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  @media (max-width: 700px) {
+    .results-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .result-cell {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; text-align: center;
+    animation: popIn 0.4s ease forwards;
+    opacity: 0; transform: scale(0.85);
+  }
+  @keyframes popIn {
+    to { opacity: 1; transform: scale(1); }
+  }
+  .result-cell:nth-child(1) { animation-delay: 0.1s; }
+  .result-cell:nth-child(2) { animation-delay: 0.25s; }
+  .result-cell:nth-child(3) { animation-delay: 0.4s; }
+  .result-cell:nth-child(4) { animation-delay: 0.55s; }
+  .result-cell h4 {
+    font-family: 'Space Mono', monospace; font-size: 0.75rem;
+    color: var(--muted); margin-bottom: 10px;
+  }
+  .result-genes { display: flex; flex-direction: column; gap: 5px; }
+  .result-gene {
+    font-size: 0.75rem; font-weight: 600; padding: 4px 8px;
+    border-radius: 99px; display: inline-block;
+  }
+  .result-haploid {
+    font-family: 'Space Mono', monospace; font-size: 0.65rem;
+    color: var(--green); margin-top: 8px;
+  }
+
+  /* Quiz */
+  .quiz-option {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 18px;
+    margin-bottom: 10px; cursor: pointer;
+    font-size: 0.88rem; line-height: 1.5;
+    transition: border-color 0.2s, background 0.2s;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .quiz-option:hover { border-color: var(--accent); background: rgba(124,58,237,0.08); }
+  .quiz-option.correct { border-color: var(--green); background: rgba(16,185,129,0.1); }
+  .quiz-option.wrong { border-color: var(--red); background: rgba(239,68,68,0.08); }
+  .quiz-option.disabled { pointer-events: none; }
+  .quiz-num {
+    font-family: 'Space Mono', monospace; font-size: 0.75rem;
+    color: var(--muted); min-width: 20px; padding-top: 1px;
+  }
+  .feedback-box {
+    background: var(--surface2); border-left: 3px solid var(--green);
+    border-radius: 0 10px 10px 0; padding: 14px 18px;
+    font-size: 0.85rem; line-height: 1.65; margin-top: 12px;
+    display: none;
+  }
+  .feedback-box.show { display: block; }
+  .feedback-box.wrong-fb { border-color: var(--red); }
+
+  /* Crossing over banner */
+  .crossover-banner {
+    display: none;
+    background: rgba(245,158,11,0.12); border: 1px solid var(--yellow);
+    border-radius: 10px; padding: 12px 18px;
+    font-size: 0.84rem; color: var(--yellow);
+    margin-bottom: 14px; align-items: center; gap: 10px;
+  }
+  .crossover-banner.show { display: flex; }
+
+  /* Notification */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 20px; font-size: 0.84rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transform: translateY(80px); opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Hidden sections */
+  .hidden { display: none !important; }
+
+  /* Pulse animation */
+  @keyframes pulse-glow {
+    0%,100% { box-shadow: 0 0 12px rgba(124,58,237,0.3); }
+    50%      { box-shadow: 0 0 28px rgba(124,58,237,0.7); }
+  }
+  .pulse { animation: pulse-glow 2s ease-in-out infinite; }
+
+  /* Scroll reveal */
+  .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.5s, transform 0.5s; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* Dragging ghost */
+  .drag-ghost {
+    position: fixed; pointer-events: none; z-index: 9999;
+    transform: translate(-50%,-50%) scale(1.1);
+    opacity: 0.9;
+  }
+</style>
 </head>
-<body class="bg-gray-900 text-white">
-  <div id="root"></div>
+<body>
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
+<div class="container">
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
+      <div class="logo-dna">🧬</div>
+      <div>
+        <h1>The Gene Journey: <span>A Meiosis Lab</span></h1>
+        <div class="subtitle">// Interactive Cell Division Simulator // 8th Grade Biology</div>
+      </div>
+    </div>
+  </header>
 
-    const stages = [
-      "Prophase I", "Metaphase I", "Anaphase I", "Telophase I",
-      "Prophase II", "Metaphase II", "Anaphase II", "Telophase II"
-    ];
+  <!-- STEP 1: GENE BANK + CHROMOSOME SETUP -->
+  <div class="section reveal" id="step1">
+    <div class="section-title">
+      <span class="step-badge">STEP 1</span> Custom Gene Laboratory
+    </div>
+    <p class="section-desc">
+      Drag genes from the Gene Bank onto the loci (slots) on each chromosome. Each chromosome pair is homologous—they carry genes for the same traits. Fill <strong>all 8 loci</strong> to seed your cell and begin meiosis.
+    </p>
 
-    const descriptions = {
-      "Prophase I": "Click chromosomes to CROSS OVER (swap colors).",
-      "Metaphase I": "Click to align chromosomes in the center.",
-      "Anaphase I": "Click to separate homologous chromosomes.",
-      "Telophase I": "Cells split into two.",
-      "Prophase II": "Prepare second division.",
-      "Metaphase II": "Align again.",
-      "Anaphase II": "Separate chromatids.",
-      "Telophase II": "4 unique haploid cells form."
-    };
+    <div style="margin-bottom:14px;">
+      <div style="font-size:0.78rem;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:8px;">GENE BANK — drag these onto chromosomes:</div>
+      <div class="gene-bank" id="gene-bank">
+        <div class="gene-chip gene-blue-eyes" draggable="true" data-gene="blue-eyes" data-label="👁️ Blue Eyes" data-color="#3b82f6">👁️ Blue Eyes</div>
+        <div class="gene-chip gene-brown-eyes" draggable="true" data-gene="brown-eyes" data-label="👁️ Brown Eyes" data-color="#b45309">👁️ Brown Eyes</div>
+        <div class="gene-chip gene-brown-hair" draggable="true" data-gene="brown-hair" data-label="💇 Brown Hair" data-color="#92400e">💇 Brown Hair</div>
+        <div class="gene-chip gene-black-hair" draggable="true" data-gene="black-hair" data-label="💇 Black Hair" data-color="#6b7280">💇 Black Hair</div>
+        <div class="gene-chip gene-tall" draggable="true" data-gene="tall" data-label="📏 Tall" data-color="#10b981">📏 Tall</div>
+        <div class="gene-chip gene-short" draggable="true" data-gene="short" data-label="📏 Short" data-color="#f59e0b">📏 Short</div>
+        <div class="gene-chip gene-freckles" draggable="true" data-gene="freckles" data-label="✨ Freckles" data-color="#ec4899">✨ Freckles</div>
+        <div class="gene-chip gene-no-freckles" draggable="true" data-gene="no-freckles" data-label="🚫 No Freckles" data-color="#8b5cf6">🚫 No Freckles</div>
+      </div>
+    </div>
 
-    function App() {
-      const [stageIndex, setStageIndex] = useState(0);
-      const [chromosomes, setChromosomes] = useState([
-        { id: 1, x: 60, y: 80, color: "#ef4444" },
-        { id: 2, x: 140, y: 80, color: "#3b82f6" }
-      ]);
-      const [selected, setSelected] = useState([]);
-
-      const currentStage = stages[stageIndex];
-
-      const nextStage = () => {
-        setStageIndex((prev) => (prev + 1) % stages.length);
-      };
-
-      const handleChromosomeClick = (id) => {
-        if (currentStage === "Prophase I") {
-          let newSelected = [...selected];
-          if (newSelected.includes(id)) {
-            newSelected = newSelected.filter(s => s !== id);
-          } else {
-            newSelected.push(id);
-          }
-
-          if (newSelected.length === 2) {
-            const [a, b] = newSelected;
-            const updated = chromosomes.map(c => {
-              if (c.id === a) return { ...c, color: chromosomes.find(x => x.id === b).color };
-              if (c.id === b) return { ...c, color: chromosomes.find(x => x.id === a).color };
-              return c;
-            });
-            setChromosomes(updated);
-            newSelected = [];
-          }
-
-          setSelected(newSelected);
-        }
-
-        if (currentStage === "Metaphase I") {
-          setChromosomes(chromosomes.map((c, i) => ({ ...c, x: 90 + i * 40, y: 100 })));
-        }
-
-        if (currentStage === "Anaphase I") {
-          setChromosomes(chromosomes.map((c, i) => ({ ...c, x: i === 0 ? 30 : 170 })));
-        }
-
-        if (currentStage === "Metaphase II") {
-          setChromosomes(chromosomes.map((c, i) => ({ ...c, y: 100 })));
-        }
-
-        if (currentStage === "Anaphase II") {
-          setChromosomes(chromosomes.map((c, i) => ({ ...c, y: i % 2 === 0 ? 40 : 160 })));
-        }
-      };
-
-      useEffect(() => {
-        if (currentStage === "Telophase II") {
-          setChromosomes([
-            { id: 1, x: 30, y: 40, color: "#ef4444" },
-            { id: 2, x: 170, y: 40, color: "#3b82f6" },
-            { id: 3, x: 30, y: 160, color: "#a855f7" },
-            { id: 4, x: 170, y: 160, color: "#22c55e" }
-          ]);
-        }
-      }, [currentStage]);
-
-      return (
-        <div className="p-6">
-          <h1 className="text-3xl font-bold text-purple-400 mb-4">
-            🧬 Meiosis: The Genetic Shuffler
-          </h1>
-
-          {/* Controls */}
-          <div className="mb-4 flex gap-2">
-            <button onClick={nextStage} className="bg-purple-600 px-3 py-1 rounded">
-              Next Step ▶
-            </button>
+    <div class="chr-workspace" id="chr-workspace">
+      <!-- Pair 1: Eye Color genes -->
+      <div class="chr-pair">
+        <div class="chr-pair-label">Chromosome Pair 1 — Eye Color</div>
+        <div class="chr-pair-inner">
+          <div class="chr-column">
+            <div class="chr-arm-label">Maternal</div>
+            <div class="chr-shape">
+              <div class="chr-body chr1">
+                <div class="locus" data-chr="1" data-homolog="M" data-locus="top" data-trait="eye">
+                  <span class="locus-gene"></span>
+                </div>
+                <div class="chr-centromere"></div>
+                <div class="locus" data-chr="1" data-homolog="M" data-locus="bot" data-trait="height">
+                  <span class="locus-gene"></span>
+                </div>
+              </div>
+            </div>
+            <div class="chr-name">Chr 1M</div>
           </div>
-
-          {/* Stage Info */}
-          <div className="mb-4">
-            <h2 className="text-xl font-bold">{currentStage}</h2>
-            <p className="text-gray-300">{descriptions[currentStage]}</p>
+          <div class="chr-column">
+            <div class="chr-arm-label">Paternal</div>
+            <div class="chr-shape">
+              <div class="chr-body chr1" style="opacity:0.75;">
+                <div class="locus" data-chr="1" data-homolog="P" data-locus="top" data-trait="eye">
+                  <span class="locus-gene"></span>
+                </div>
+                <div class="chr-centromere"></div>
+                <div class="locus" data-chr="1" data-homolog="P" data-locus="bot" data-trait="height">
+                  <span class="locus-gene"></span>
+                </div>
+              </div>
+            </div>
+            <div class="chr-name">Chr 1P</div>
           </div>
-
-          {/* Cell */}
-          <div className="relative w-full h-72 bg-gray-800 rounded overflow-hidden border border-gray-700">
-            {chromosomes.map(c => (
-              <div
-                key={c.id}
-                onClick={() => handleChromosomeClick(c.id)}
-                className="absolute w-6 h-12 rounded cursor-pointer transition-all duration-500 hover:scale-110"
-                style={{
-                  left: c.x,
-                  top: c.y,
-                  backgroundColor: c.color,
-                  outline: selected.includes(c.id) ? "2px solid white" : "none"
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Guidance */}
-          <div className="mt-6 bg-gray-800 p-4 rounded">
-            <h2 className="font-bold mb-2">🧠 What to do</h2>
-            <p className="text-sm text-gray-300">
-              Follow the instructions above. Click chromosomes to interact and simulate each stage.
-              Try to understand HOW chromosomes move and WHY cells become different.
-            </p>
-          </div>
-
         </div>
-      );
-    }
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">Top locus = Eye Color | Bot locus = Height</div>
+      </div>
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+      <!-- Pair 2: Hair + Freckles genes -->
+      <div class="chr-pair">
+        <div class="chr-pair-label">Chromosome Pair 2 — Hair & Freckles</div>
+        <div class="chr-pair-inner">
+          <div class="chr-column">
+            <div class="chr-arm-label">Maternal</div>
+            <div class="chr-shape">
+              <div class="chr-body chr2">
+                <div class="locus" data-chr="2" data-homolog="M" data-locus="top" data-trait="hair">
+                  <span class="locus-gene"></span>
+                </div>
+                <div class="chr-centromere"></div>
+                <div class="locus" data-chr="2" data-homolog="M" data-locus="bot" data-trait="freckles">
+                  <span class="locus-gene"></span>
+                </div>
+              </div>
+            </div>
+            <div class="chr-name">Chr 2M</div>
+          </div>
+          <div class="chr-column">
+            <div class="chr-arm-label">Paternal</div>
+            <div class="chr-shape">
+              <div class="chr-body chr2" style="opacity:0.75;">
+                <div class="locus" data-chr="2" data-homolog="P" data-locus="top" data-trait="hair">
+                  <span class="locus-gene"></span>
+                </div>
+                <div class="chr-centromere"></div>
+                <div class="locus" data-chr="2" data-homolog="P" data-locus="bot" data-trait="freckles">
+                  <span class="locus-gene"></span>
+                </div>
+              </div>
+            </div>
+            <div class="chr-name">Chr 2P</div>
+          </div>
+        </div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">Top locus = Hair Color | Bot locus = Freckles</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary pulse" id="start-meiosis-btn" disabled onclick="startMeiosis()">
+        🔬 Start Meiosis
+      </button>
+      <button class="btn btn-secondary" onclick="resetLab()">🔄 Reset Lab</button>
+      <span id="fill-status" style="font-size:0.8rem;color:var(--muted);align-self:center;"></span>
+    </div>
+  </div>
+
+  <!-- STEP 2 & 3: MEIOSIS VISUALIZATION + INFO PANEL -->
+  <div class="section reveal hidden" id="step2">
+    <div class="section-title">
+      <span class="step-badge">STEP 2 & 3</span> Meiosis Visualization
+    </div>
+
+    <div class="stage-header">
+      <div class="stage-name" id="current-stage-name">Interphase</div>
+      <div class="stage-progress">
+        <div class="stage-progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);font-family:'Space Mono',monospace;" id="stage-counter">0 / 8</div>
+    </div>
+
+    <div class="meiosis-layout">
+      <div>
+        <div class="crossover-banner" id="crossover-banner">
+          ⚡ <strong>Crossing Over Available!</strong> &nbsp;Click the chromosomes to swap gene segments — this is how variation is created!
+          <button class="btn btn-secondary" style="padding:5px 12px;font-size:0.75rem;margin-left:auto;" onclick="doCrossover()">Swap Genes!</button>
+        </div>
+        <div class="cell-canvas" id="cell-canvas">
+          <svg id="stage-svg" viewBox="0 0 700 420"></svg>
+        </div>
+        <div class="stage-dots" id="stage-dots"></div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="prev-btn" onclick="prevStage()" disabled>← Previous</button>
+          <button class="btn btn-primary" id="next-btn" onclick="nextStage()">Next Stage →</button>
+        </div>
+      </div>
+
+      <div class="info-panel" id="info-panel">
+        <h3>📖 What's Happening?</h3>
+        <div class="info-fact" id="info-text">Loading...</div>
+        <div class="chromosome-counter">
+          <div>🧬 Chromosome count:</div>
+          <div class="chr-count" id="chr-count-display">4 (2n)</div>
+        </div>
+        <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+          <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px;font-family:'Space Mono',monospace;">YOUR GENES</div>
+          <div id="gene-tracker" style="font-size:0.78rem;line-height:1.8;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: RESULTS -->
+  <div class="section reveal hidden" id="step3">
+    <div class="section-title">
+      <span class="step-badge">STEP 3</span> Final Result: 4 Haploid Cells
+    </div>
+    <p class="section-desc">
+      Meiosis is complete! Your original diploid cell (2 copies of each chromosome) has divided into <strong>4 genetically unique haploid cells</strong> (1 copy of each chromosome). Look at how the genes got shuffled!
+    </p>
+    <div class="results-grid" id="results-grid"></div>
+    <div style="margin-top:20px;padding:16px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);font-size:0.84rem;line-height:1.7;" id="results-summary">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="showQuiz()">Continue to Evolution Challenge →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: EVOLUTION CHALLENGE -->
+  <div class="section reveal hidden" id="step4">
+    <div class="section-title">
+      <span class="step-badge">STEP 4</span> The Evolution Challenge 🌍
+    </div>
+    <p class="section-desc">
+      You just watched meiosis create 4 different cells. Now let's connect this to the BIG picture — evolution and survival. Answer these questions:
+    </p>
+    <div id="quiz-container"></div>
+  </div>
+
+  <div style="height:60px;"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  genes: {
+    '1M-top': null, '1M-bot': null,
+    '1P-top': null, '1P-bot': null,
+    '2M-top': null, '2M-bot': null,
+    '2P-top': null, '2P-bot': null,
+  },
+  crossoverDone: false,
+  currentStage: 0,
+  draggingGene: null,
+};
+
+const GENE_DATA = {
+  'blue-eyes':    { label: 'Blue Eyes',   emoji: '👁️', short: 'B.Eye', color: '#3b82f6', bg: 'rgba(59,130,246,0.2)' },
+  'brown-eyes':   { label: 'Brown Eyes',  emoji: '👁️', short: 'Br.Eye', color: '#b45309', bg: 'rgba(180,83,9,0.2)' },
+  'brown-hair':   { label: 'Brown Hair',  emoji: '💇', short: 'Br.Hair', color: '#92400e', bg: 'rgba(146,64,14,0.2)' },
+  'black-hair':   { label: 'Black Hair',  emoji: '💇', short: 'Bk.Hair', color: '#6b7280', bg: 'rgba(107,114,128,0.2)' },
+  'tall':         { label: 'Tall',        emoji: '📏', short: 'Tall', color: '#10b981', bg: 'rgba(16,185,129,0.2)' },
+  'short':        { label: 'Short',       emoji: '📏', short: 'Short', color: '#f59e0b', bg: 'rgba(245,158,11,0.2)' },
+  'freckles':     { label: 'Freckles',    emoji: '✨', short: 'Freck', color: '#ec4899', bg: 'rgba(236,72,153,0.2)' },
+  'no-freckles':  { label: 'No Freckles', emoji: '🚫', short: 'No Fk', color: '#8b5cf6', bg: 'rgba(139,92,246,0.2)' },
+};
+
+const STAGES = [
+  {
+    name: 'Prophase I',
+    chrCount: '4 (2n)',
+    info: `<strong>Prophase I</strong> is the most important step for variation! The chromosomes condense and become visible. Homologous pairs find each other and line up side by side in a process called <em>synapsis</em>. This is when <em>crossing over</em> can happen — segments of chromosomes swap between maternal and paternal copies, shuffling your custom genes!`,
+    showCrossover: true,
+    layout: 'prophase1',
+  },
+  {
+    name: 'Metaphase I',
+    chrCount: '4 (2n)',
+    info: `During <strong>Metaphase I</strong>, the homologous pairs (tetrads) line up along the <em>middle</em> of the cell, called the metaphase plate. The orientation of each pair is <em>random</em> — this is called independent assortment, and it's another source of genetic variation!`,
+    showCrossover: false,
+    layout: 'metaphase1',
+  },
+  {
+    name: 'Anaphase I',
+    chrCount: '4 (2n)',
+    info: `<strong>Anaphase I</strong>: The homologous pairs are pulled apart to opposite sides of the cell. Notice — <em>sister chromatids stay together</em> at this point. The chromosome number per cell is being cut in half. Your genes travel with whichever chromosome they're on!`,
+    showCrossover: false,
+    layout: 'anaphase1',
+  },
+  {
+    name: 'Telophase I',
+    chrCount: '2 per cell (n)',
+    info: `<strong>Telophase I</strong>: The cell splits into <em>two cells</em>, each with one chromosome from each homologous pair. These cells are now <em>haploid</em> — they have half the original chromosome number. The cell is not quite done dividing though!`,
+    showCrossover: false,
+    layout: 'telophase1',
+  },
+  {
+    name: 'Prophase II',
+    chrCount: '2 per cell (n)',
+    info: `<strong>Prophase II</strong>: Each of the two cells prepares for a <em>second division</em>. Chromosomes condense again. This time, there's no crossing over. Each cell has one chromosome from each pair — the sister chromatids are still attached at the centromere.`,
+    showCrossover: false,
+    layout: 'prophase2',
+  },
+  {
+    name: 'Metaphase II',
+    chrCount: '2 per cell (n)',
+    info: `<strong>Metaphase II</strong>: In both cells, chromosomes line up at the center <em>individually</em> this time (not in pairs). The spindle fibers attach to the centromeres, getting ready to pull the sister chromatids apart.`,
+    showCrossover: false,
+    layout: 'metaphase2',
+  },
+  {
+    name: 'Anaphase II',
+    chrCount: '1 per cell (n)',
+    info: `<strong>Anaphase II</strong>: The sister chromatids are finally separated! They're pulled to opposite poles of each cell. At this point, you effectively have <em>4 sets</em> of single chromosomes moving toward 4 poles in 2 cells.`,
+    showCrossover: false,
+    layout: 'anaphase2',
+  },
+  {
+    name: 'Telophase II',
+    chrCount: '1 per cell (n)',
+    info: `<strong>Telophase II</strong>: Both cells divide, producing <em>4 haploid daughter cells</em> total. Each cell has just 1 copy of each chromosome. Because of crossing over and independent assortment, all 4 cells carry a unique combination of your custom genes!`,
+    showCrossover: false,
+    layout: 'telophase2',
+  },
+];
+
+// ============================================================
+// DRAG AND DROP
+// ============================================================
+let ghostEl = null;
+
+document.querySelectorAll('.gene-chip').forEach(chip => {
+  chip.addEventListener('dragstart', e => {
+    state.draggingGene = chip.dataset.gene;
+    chip.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  chip.addEventListener('dragend', () => {
+    chip.classList.remove('dragging');
+    state.draggingGene = null;
+  });
+  // Touch support
+  chip.addEventListener('touchstart', handleTouchStart, { passive: true });
+  chip.addEventListener('touchmove', handleTouchMove, { passive: false });
+  chip.addEventListener('touchend', handleTouchEnd);
+});
+
+function handleTouchStart(e) {
+  state.draggingGene = this.dataset.gene;
+  state.touchSourceChip = this;
+  ghostEl = document.createElement('div');
+  ghostEl.className = 'drag-ghost gene-chip ' + this.className.replace('gene-chip','').trim();
+  ghostEl.textContent = this.textContent;
+  ghostEl.style.cssText = `position:fixed;pointer-events:none;z-index:9999;padding:8px 14px;border-radius:99px;font-size:0.8rem;font-weight:600;`;
+  document.body.appendChild(ghostEl);
+}
+
+function handleTouchMove(e) {
+  e.preventDefault();
+  const t = e.touches[0];
+  if (ghostEl) {
+    ghostEl.style.left = (t.clientX - 40) + 'px';
+    ghostEl.style.top  = (t.clientY - 20) + 'px';
+  }
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  document.querySelectorAll('.locus').forEach(l => l.classList.remove('drag-over'));
+  const locus = el?.closest('.locus');
+  if (locus) locus.classList.add('drag-over');
+}
+
+function handleTouchEnd(e) {
+  if (ghostEl) { ghostEl.remove(); ghostEl = null; }
+  const t = e.changedTouches[0];
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const locus = el?.closest('.locus');
+  if (locus && state.draggingGene) dropOnLocus(locus, state.draggingGene);
+  document.querySelectorAll('.locus').forEach(l => l.classList.remove('drag-over'));
+  state.draggingGene = null;
+}
+
+document.querySelectorAll('.locus').forEach(locus => {
+  locus.addEventListener('dragover', e => {
+    e.preventDefault();
+    locus.classList.add('drag-over');
+  });
+  locus.addEventListener('dragleave', () => locus.classList.remove('drag-over'));
+  locus.addEventListener('drop', e => {
+    e.preventDefault();
+    locus.classList.remove('drag-over');
+    if (state.draggingGene) dropOnLocus(locus, state.draggingGene);
+  });
+});
+
+function dropOnLocus(locus, gene) {
+  const key = `${locus.dataset.chr}${locus.dataset.homolog}-${locus.dataset.locus}`;
+  // Check trait compatibility
+  const trait = locus.dataset.trait;
+  const gd = GENE_DATA[gene];
+  if (!gd) return;
+  const traitMap = { eye: ['blue-eyes','brown-eyes'], hair: ['brown-hair','black-hair'], height: ['tall','short'], freckles: ['freckles','no-freckles'] };
+  if (!traitMap[trait]?.includes(gene)) {
+    showToast(`⚠️ That gene doesn't belong on this locus! Try the correct trait slot.`);
+    return;
+  }
+  // Already filled?
+  if (state.genes[key]) {
+    const oldGene = state.genes[key];
+    document.querySelector(`[data-gene="${oldGene}"]`)?.classList.remove('used');
+  }
+  state.genes[key] = gene;
+  const geneSrc = document.querySelector(`[data-gene="${gene}"]`);
+  geneSrc?.classList.add('used');
+  const span = locus.querySelector('.locus-gene');
+  const d = GENE_DATA[gene];
+  locus.classList.add('filled');
+  locus.style.background = d.bg;
+  locus.style.borderColor = d.color;
+  span.textContent = d.emoji + ' ' + d.short;
+  span.style.color = d.color;
+  updateFillStatus();
+}
+
+function updateFillStatus() {
+  const filled = Object.values(state.genes).filter(Boolean).length;
+  const total = 8;
+  const status = document.getElementById('fill-status');
+  status.textContent = `${filled} / ${total} loci filled`;
+  const btn = document.getElementById('start-meiosis-btn');
+  if (filled === total) {
+    btn.disabled = false;
+    btn.classList.add('pulse');
+    status.style.color = 'var(--green)';
+    showToast('✅ All genes placed! Ready to start meiosis.');
+  } else {
+    btn.disabled = true;
+    status.style.color = 'var(--muted)';
+  }
+}
+
+// ============================================================
+// MEIOSIS LOGIC
+// ============================================================
+function startMeiosis() {
+  document.getElementById('step2').classList.remove('hidden');
+  document.getElementById('step2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  state.currentStage = 0;
+  buildStageDots();
+  updateInfoPanel();
+  renderStage();
+}
+
+function buildStageDots() {
+  const dots = document.getElementById('stage-dots');
+  dots.innerHTML = '';
+  STAGES.forEach((s, i) => {
+    const d = document.createElement('div');
+    d.className = 'stage-dot' + (i===0?' active':'');
+    d.title = s.name;
+    d.onclick = () => { state.currentStage = i; renderStage(); updateInfoPanel(); syncDots(); };
+    dots.appendChild(d);
+  });
+}
+
+function syncDots() {
+  document.querySelectorAll('.stage-dot').forEach((d,i) => {
+    d.className = 'stage-dot' + (i < state.currentStage ? ' done' : (i === state.currentStage ? ' active' : ''));
+  });
+}
+
+function nextStage() {
+  if (state.currentStage < STAGES.length - 1) {
+    state.currentStage++;
+    renderStage();
+    updateInfoPanel();
+    syncDots();
+    if (state.currentStage === STAGES.length - 1) {
+      setTimeout(showResults, 600);
+    }
+  }
+}
+
+function prevStage() {
+  if (state.currentStage > 0) {
+    state.currentStage--;
+    renderStage();
+    updateInfoPanel();
+    syncDots();
+  }
+}
+
+function updateInfoPanel() {
+  const s = STAGES[state.currentStage];
+  document.getElementById('current-stage-name').textContent = s.name;
+  document.getElementById('info-text').innerHTML = s.info;
+  document.getElementById('chr-count-display').textContent = s.chrCount;
+  document.getElementById('progress-fill').style.width = ((state.currentStage+1)/STAGES.length*100) + '%';
+  document.getElementById('stage-counter').textContent = `${state.currentStage+1} / ${STAGES.length}`;
+  document.getElementById('prev-btn').disabled = state.currentStage === 0;
+  document.getElementById('next-btn').disabled = state.currentStage === STAGES.length - 1;
+  const banner = document.getElementById('crossover-banner');
+  if (s.showCrossover && !state.crossoverDone) {
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+  // Gene tracker
+  const tracker = document.getElementById('gene-tracker');
+  const gs = state.genes;
+  tracker.innerHTML = [
+    `Chr1-M: ${geneTag(gs['1M-top'])} ${geneTag(gs['1M-bot'])}`,
+    `Chr1-P: ${geneTag(gs['1P-top'])} ${geneTag(gs['1P-bot'])}`,
+    `Chr2-M: ${geneTag(gs['2M-top'])} ${geneTag(gs['2M-bot'])}`,
+    `Chr2-P: ${geneTag(gs['2P-top'])} ${geneTag(gs['2P-bot'])}`,
+  ].join('<br>');
+}
+
+function geneTag(key) {
+  if (!key) return '<span style="color:var(--muted)">—</span>';
+  const d = GENE_DATA[key];
+  return `<span style="color:${d.color};font-weight:600;">${d.emoji}${d.short}</span>`;
+}
+
+function doCrossover() {
+  // Swap top loci between maternal and paternal of chr1
+  const tmp1 = state.genes['1M-top'];
+  state.genes['1M-top'] = state.genes['1P-top'];
+  state.genes['1P-top'] = tmp1;
+  // Also swap bottom of chr2
+  const tmp2 = state.genes['2M-bot'];
+  state.genes['2M-bot'] = state.genes['2P-bot'];
+  state.genes['2P-bot'] = tmp2;
+  state.crossoverDone = true;
+  document.getElementById('crossover-banner').classList.remove('show');
+  renderStage();
+  updateInfoPanel();
+  showToast('🔀 Crossing over complete! Genes have been shuffled between homologs.');
+}
+
+// ============================================================
+// SVG RENDERING
+// ============================================================
+const CHR_COLORS = {
+  '1M': { fill: '#7c3aed', stroke: '#a78bfa' },
+  '1P': { fill: '#5b21b6', stroke: '#c4b5fd' },
+  '2M': { fill: '#0891b2', stroke: '#67e8f9' },
+  '2P': { fill: '#0e7490', stroke: '#a5f3fc' },
+};
+
+function renderStage() {
+  const svg = document.getElementById('stage-svg');
+  const s = STAGES[state.currentStage];
+  svg.innerHTML = '';
+
+  const W = 700, H = 420;
+  // Cell membrane
+  const g = state.currentStage;
+
+  if (g <= 3) {
+    // MEIOSIS I — 1 cell
+    drawCellMembrane(svg, W/2, H/2, W/2-10, H/2-10, '#7c3aed');
+    renderMeiosisILayout(svg, s.layout, W, H);
+  } else {
+    // MEIOSIS II — 2 cells side by side
+    drawCellMembrane(svg, W/4, H/2, W/4-10, H/2-10, '#06b6d4');
+    drawCellMembrane(svg, 3*W/4, H/2, W/4-10, H/2-10, '#06b6d4');
+    renderMeiosisIILayout(svg, s.layout, W, H);
+  }
+}
+
+function drawCellMembrane(svg, cx, cy, rx, ry, color) {
+  const el = svgEl('ellipse', { cx, cy, rx, ry,
+    fill: 'rgba(255,255,255,0.02)',
+    stroke: color, 'stroke-width': '2',
+    'stroke-dasharray': '6 3',
+    opacity: '0.7'
+  });
+  svg.appendChild(el);
+  // Nucleus hint
+  const nuc = svgEl('ellipse', { cx, cy, rx: rx*0.35, ry: ry*0.35,
+    fill: 'none', stroke: color, 'stroke-width': '1', opacity: '0.25'
+  });
+  svg.appendChild(nuc);
+}
+
+function svgEl(tag, attrs, text) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+  if (text !== undefined) el.textContent = text;
+  return el;
+}
+
+function drawChromosome(svg, x, y, chrKey, showGenes, orientation='vertical', scale=1, label=true) {
+  const c = CHR_COLORS[chrKey] || CHR_COLORS['1M'];
+  const W = 18*scale, H = 60*scale;
+  const g = svgEl('g', { transform: `translate(${x},${y})` });
+  // Body
+  const r = W/2;
+  if (orientation === 'vertical') {
+    const rect = svgEl('rect', { x: -W/2, y: -H/2, width: W, height: H, rx: r, ry: r, fill: c.fill, stroke: c.stroke, 'stroke-width': '1.5' });
+    g.appendChild(rect);
+    // Centromere
+    const cen = svgEl('rect', { x: -W/2, y: -4*scale, width: W, height: 8*scale, rx: 3, fill: 'rgba(255,255,255,0.18)' });
+    g.appendChild(cen);
+    // Genes
+    if (showGenes) {
+      drawGeneOnChr(g, chrKey, 'top', 0, -H*0.32, W, scale);
+      drawGeneOnChr(g, chrKey, 'bot', 0, H*0.32, W, scale);
+    }
+    if (label) {
+      const t = svgEl('text', { x: 0, y: H/2+14*scale, 'text-anchor': 'middle', 'font-size': `${9*scale}`, fill: '#94a3b8', 'font-family': 'Space Mono' });
+      t.textContent = chrKey;
+      g.appendChild(t);
+    }
+  }
+  svg.appendChild(g);
+}
+
+function drawGeneOnChr(g, chrKey, locus, x, y, W, scale) {
+  // Map chrKey + locus to state.genes key
+  const locusMap = { '1M': { top: '1M-top', bot: '1M-bot' }, '1P': { top: '1P-top', bot: '1P-bot' }, '2M': { top: '2M-top', bot: '2M-bot' }, '2P': { top: '2P-top', bot: '2P-bot' } };
+  const key = locusMap[chrKey]?.[locus];
+  const gene = state.genes[key];
+  if (!gene) return;
+  const d = GENE_DATA[gene];
+  const s = 10*scale;
+  const circle = svgEl('circle', { cx: x, cy: y, r: s, fill: d.color, opacity: '0.9', stroke: 'white', 'stroke-width': '1' });
+  const txt = svgEl('text', { x, y: y+3*scale, 'text-anchor': 'middle', 'font-size': `${6*scale}`, fill: 'white', 'font-weight': 'bold', 'font-family': 'DM Sans' });
+  txt.textContent = d.emoji;
+  g.appendChild(circle);
+  g.appendChild(txt);
+}
+
+function renderMeiosisILayout(svg, layout, W, H) {
+  const cx = W/2, cy = H/2;
+  switch(layout) {
+    case 'prophase1': {
+      // Homologs close together (synapsis)
+      drawChromosome(svg, cx-80, cy, '1M', true, 'vertical', 1);
+      drawChromosome(svg, cx-50, cy, '1P', true, 'vertical', 1);
+      drawChromosome(svg, cx+50, cy, '2M', true, 'vertical', 1);
+      drawChromosome(svg, cx+80, cy, '2P', true, 'vertical', 1);
+      // Synapsis indicator
+      const line1 = svgEl('line', { x1: cx-76, y1: cy-40, x2: cx-54, y2: cy-40, stroke: '#f59e0b', 'stroke-width': '2', opacity: '0.7', 'stroke-dasharray': '3 2' });
+      svg.appendChild(line1);
+      const line2 = svgEl('line', { x1: cx+54, y1: cy-40, x2: cx+76, y2: cy-40, stroke: '#f59e0b', 'stroke-width': '2', opacity: '0.7', 'stroke-dasharray': '3 2' });
+      svg.appendChild(line2);
+      addLabel(svg, cx, cy+H*0.38, 'Homologs pair up (synapsis)', '#f59e0b');
+      if (state.crossoverDone) {
+        addLabel(svg, cx, cy-H*0.4, '🔀 Crossing over complete!', '#10b981');
+      }
+      break;
+    }
+    case 'metaphase1': {
+      // Line up at metaphase plate
+      drawChromosome(svg, cx-65, cy, '1M', true, 'vertical', 1);
+      drawChromosome(svg, cx-35, cy, '1P', true, 'vertical', 1);
+      drawChromosome(svg, cx+35, cy, '2M', true, 'vertical', 1);
+      drawChromosome(svg, cx+65, cy, '2P', true, 'vertical', 1);
+      // Metaphase plate
+      const plate = svgEl('line', { x1: cx, y1: cy-H*0.38, x2: cx, y2: cy+H*0.38, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': '2', 'stroke-dasharray': '4 3' });
+      svg.appendChild(plate);
+      // Spindle fibers
+      [cx-65, cx-35, cx+35, cx+65].forEach(x => {
+        svg.appendChild(svgEl('line', { x1: cx-W*0.4, y1: cy, x2: x, y2: cy-30, stroke: '#ef4444', 'stroke-width': '1', opacity: '0.5' }));
+        svg.appendChild(svgEl('line', { x1: cx+W*0.4, y1: cy, x2: x, y2: cy+30, stroke: '#ef4444', 'stroke-width': '1', opacity: '0.5' }));
+      });
+      addLabel(svg, cx, cy+H*0.38, 'Pairs align at center (metaphase plate)', '#ef4444');
+      break;
+    }
+    case 'anaphase1': {
+      // Pairs pulled to poles
+      drawChromosome(svg, cx-120, cy-70, '1M', true, 'vertical', 0.9);
+      drawChromosome(svg, cx-80, cy-70, '2M', true, 'vertical', 0.9);
+      drawChromosome(svg, cx+80, cy+70, '1P', true, 'vertical', 0.9);
+      drawChromosome(svg, cx+120, cy+70, '2P', true, 'vertical', 0.9);
+      // Arrows
+      ['↖','↗'].forEach((a, i) => {
+        const t = svgEl('text', { x: cx + (i===0?-50:50), y: cy, 'text-anchor': 'middle', 'font-size': '22', fill: 'rgba(239,68,68,0.6)' });
+        t.textContent = i===0 ? '↖' : '↘';
+        svg.appendChild(t);
+      });
+      addLabel(svg, cx-100, cy-H*0.4, 'Maternal copies', '#a78bfa');
+      addLabel(svg, cx+100, cy+H*0.4, 'Paternal copies', '#67e8f9');
+      break;
+    }
+    case 'telophase1': {
+      // Two proto-cells forming
+      drawCellMembrane(svg, cx-130, cy, 110, 100, '#7c3aed');
+      drawCellMembrane(svg, cx+130, cy, 110, 100, '#06b6d4');
+      drawChromosome(svg, cx-150, cy, '1M', true, 'vertical', 0.85);
+      drawChromosome(svg, cx-110, cy, '2M', true, 'vertical', 0.85);
+      drawChromosome(svg, cx+110, cy, '1P', true, 'vertical', 0.85);
+      drawChromosome(svg, cx+150, cy, '2P', true, 'vertical', 0.85);
+      addLabel(svg, cx-130, cy+H*0.44, 'Cell A (n=2)', '#a78bfa');
+      addLabel(svg, cx+130, cy+H*0.44, 'Cell B (n=2)', '#67e8f9');
+      break;
+    }
+  }
+}
+
+function renderMeiosisIILayout(svg, layout, W, H) {
+  // Left cell: 1M+2M (maternal), Right cell: 1P+2P (paternal)
+  const cells = [
+    { cx: W/4, chrA: '1M', chrB: '2M' },
+    { cx: 3*W/4, chrA: '1P', chrB: '2P' },
+  ];
+  const cy = H/2;
+
+  switch(layout) {
+    case 'prophase2': {
+      cells.forEach(cell => {
+        drawChromosome(svg, cell.cx-18, cy, cell.chrA, true, 'vertical', 0.85);
+        drawChromosome(svg, cell.cx+18, cy, cell.chrB, true, 'vertical', 0.85);
+      });
+      addLabel(svg, W/4, cy+H*0.4, 'Cell A', '#a78bfa');
+      addLabel(svg, 3*W/4, cy+H*0.4, 'Cell B', '#67e8f9');
+      break;
+    }
+    case 'metaphase2': {
+      cells.forEach(cell => {
+        drawChromosome(svg, cell.cx-18, cy, cell.chrA, true, 'vertical', 0.85);
+        drawChromosome(svg, cell.cx+18, cy, cell.chrB, true, 'vertical', 0.85);
+        // Plate
+        svg.appendChild(svgEl('line', { x1: cell.cx, y1: cy-H*0.35, x2: cell.cx, y2: cy+H*0.35, stroke: 'rgba(255,255,255,0.1)', 'stroke-width': '1', 'stroke-dasharray': '3 2' }));
+      });
+      addLabel(svg, W/2, 20, 'Both cells aligning chromosomes', '#ef4444', '10');
+      break;
+    }
+    case 'anaphase2': {
+      // Chromatids separated — show 4 poles
+      cells.forEach(cell => {
+        drawChromosome(svg, cell.cx-18, cy-75, cell.chrA, true, 'vertical', 0.75);
+        drawChromosome(svg, cell.cx+18, cy-75, cell.chrB, true, 'vertical', 0.75);
+        drawChromosome(svg, cell.cx-18, cy+75, cell.chrA, true, 'vertical', 0.75);
+        drawChromosome(svg, cell.cx+18, cy+75, cell.chrB, true, 'vertical', 0.75);
+        ['↑','↓'].forEach((a,i) => {
+          const t = svgEl('text', { x: cell.cx, y: cy+(i===0?-10:20), 'text-anchor':'middle','font-size':'16', fill:'rgba(239,68,68,0.6)' });
+          t.textContent = a;
+          svg.appendChild(t);
+        });
+      });
+      addLabel(svg, W/2, 20, 'Sister chromatids separating!', '#10b981', '10');
+      break;
+    }
+    case 'telophase2': {
+      // 4 tiny cells
+      const positions = [
+        { cx: W*0.18, cy: H*0.3, chrA: '1M', chrB: '2M' },
+        { cx: W*0.18, cy: H*0.7, chrA: '1M', chrB: '2M' },
+        { cx: W*0.82, cy: H*0.3, chrA: '1P', chrB: '2P' },
+        { cx: W*0.82, cy: H*0.7, chrA: '1P', chrB: '2P' },
+      ];
+      const labels = ['Cell 1','Cell 2','Cell 3','Cell 4'];
+      positions.forEach((pos, i) => {
+        drawCellMembrane(svg, pos.cx, pos.cy, 90, 75, i<2?'#7c3aed':'#06b6d4');
+        drawChromosome(svg, pos.cx-14, pos.cy, pos.chrA, true, 'vertical', 0.7);
+        drawChromosome(svg, pos.cx+14, pos.cy, pos.chrB, true, 'vertical', 0.7);
+        addLabel(svg, pos.cx, pos.cy+60, labels[i], i<2?'#a78bfa':'#67e8f9', '9');
+      });
+      addLabel(svg, W/2, 20, '4 Haploid Daughter Cells Complete! 🎉', '#10b981', '11');
+      break;
+    }
+  }
+}
+
+function addLabel(svg, x, y, text, color, size='9') {
+  const t = svgEl('text', { x, y, 'text-anchor':'middle', 'font-size': size, fill: color, 'font-family': 'DM Sans', 'font-weight': '600' });
+  t.textContent = text;
+  svg.appendChild(t);
+}
+
+// ============================================================
+// RESULTS
+// ============================================================
+function showResults() {
+  const step3 = document.getElementById('step3');
+  step3.classList.remove('hidden');
+  step3.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const g = state.genes;
+  // The 4 cells get different gene combos based on crossing over and independent assortment
+  // Cell 1: 1M + 2M (both maternal)
+  // Cell 2: 1M + 2P (maternal chr1, paternal chr2)
+  // Cell 3: 1P + 2M (paternal chr1, maternal chr2)
+  // Cell 4: 1P + 2P (both paternal)
+  const cells = [
+    { id: 'Cell 1', genes: [g['1M-top'], g['1M-bot'], g['2M-top'], g['2M-bot']], color: '#a78bfa' },
+    { id: 'Cell 2', genes: [g['1M-top'], g['1M-bot'], g['2P-top'], g['2P-bot']], color: '#818cf8' },
+    { id: 'Cell 3', genes: [g['1P-top'], g['1P-bot'], g['2M-top'], g['2M-bot']], color: '#67e8f9' },
+    { id: 'Cell 4', genes: [g['1P-top'], g['1P-bot'], g['2P-top'], g['2P-bot']], color: '#34d399' },
+  ];
+
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = '';
+  cells.forEach(cell => {
+    const div = document.createElement('div');
+    div.className = 'result-cell';
+    div.style.borderColor = cell.color + '60';
+    div.innerHTML = `
+      <h4 style="color:${cell.color}">${cell.id} 🧬</h4>
+      <div class="result-genes">
+        ${cell.genes.filter(Boolean).map(gk => {
+          const d = GENE_DATA[gk];
+          return `<span class="result-gene" style="background:${d.bg};color:${d.color};">${d.emoji} ${d.label}</span>`;
+        }).join('')}
+      </div>
+      <div class="result-haploid">n = 2 (haploid)</div>
+    `;
+    grid.appendChild(div);
+  });
+
+  // Check uniqueness
+  const combos = cells.map(c => c.genes.join(','));
+  const unique = new Set(combos).size;
+  const summary = document.getElementById('results-summary');
+  summary.innerHTML = `
+    <strong style="color:var(--green)">🎉 Meiosis Complete!</strong><br><br>
+    Your original diploid cell (with <strong>4 chromosomes</strong>) has produced <strong>4 haploid daughter cells</strong> 
+    (each with <strong>2 chromosomes</strong>). 
+    ${state.crossoverDone ? `Because you performed <strong style="color:var(--accent)">crossing over</strong> in Prophase I, ` : 'Even without crossing over, '}
+    independent assortment created <strong>${unique} genetically distinct cell${unique>1?'s':''}</strong>. 
+    Each cell carries a unique combination of your custom genes. If these were sex cells (gametes), 
+    every offspring they help create would be genetically unique — this is the engine of <em>biological diversity</em>! 🌍
+  `;
+}
+
+// ============================================================
+// QUIZ
+// ============================================================
+const QUIZ = [
+  {
+    q: 'Why is genetic variation (different gene combos in each cell) important for evolution?',
+    options: [
+      { text: 'It makes all offspring identical, which helps the species stay stable.', correct: false },
+      { text: 'It means some individuals may have traits better suited to survive environmental changes — those survive and reproduce.', correct: true },
+      { text: 'It slows down reproduction so the species doesn\'t overpopulate.', correct: false },
+      { text: 'It has no effect on evolution — evolution only happens due to mutations.', correct: false },
+    ],
+    feedback: `<strong>Exactly right! 🧬</strong> Natural selection needs variation to work. If all offspring were identical clones, one disease, drought, or predator could wipe out the entire population. With genetic variation, some individuals may have traits that help them survive — those individuals reproduce, passing on their helpful traits. Over thousands of generations, this shapes a species' evolution.`,
+    wrongFeedback: `Not quite. Think about what would happen if one disease wiped out all members of a species with identical genes. Variation ensures some individuals have different traits — and those differences might just save the species!`,
+  },
+  {
+    q: 'What is NONDISJUNCTION, and what would happen if chromosomes failed to separate correctly during Meiosis II?',
+    options: [
+      { text: 'Chromosomes replicate too many times, creating extra-large cells.', correct: false },
+      { text: 'Genes mutate randomly and create brand-new traits.', correct: false },
+      { text: 'Sister chromatids fail to separate — some daughter cells end up with an extra chromosome, others with none.', correct: true },
+      { text: 'The cell skips meiosis entirely and just copies itself by mitosis.', correct: false },
+    ],
+    feedback: `<strong>Perfect! 🎯</strong> Nondisjunction means the chromosomes or chromatids don\'t pull apart properly. The result? Some cells get <em>too many</em> chromosomes (trisomy), and others get <em>too few</em> (monosomy). A famous example is Down syndrome (Trisomy 21), where chromosome 21 fails to separate. Understanding meiosis helps us understand why these conditions occur at the cellular level.`,
+    wrongFeedback: `Not quite. Nondisjunction is specifically about chromosomes failing to separate during cell division. This causes an unequal distribution — some daughter cells end up with extra chromosomes, and others are missing one. These errors can lead to conditions like Trisomy 21 (Down syndrome).`,
+  },
+];
+
+let quizAnswered = [false, false];
+function showQuiz() {
+  document.getElementById('step4').classList.remove('hidden');
+  document.getElementById('step4').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const container = document.getElementById('quiz-container');
+  container.innerHTML = '';
+  QUIZ.forEach((q, qi) => {
+    const qDiv = document.createElement('div');
+    qDiv.style.cssText = 'margin-bottom:28px;';
+    qDiv.innerHTML = `
+      <div style="font-weight:600;font-size:0.95rem;margin-bottom:12px;line-height:1.5;">
+        <span style="color:var(--accent);font-family:'Space Mono',monospace;">Q${qi+1}.</span> ${q.q}
+      </div>
+      ${q.options.map((opt, oi) => `
+        <div class="quiz-option" id="q${qi}o${oi}" onclick="answerQuiz(${qi},${oi},${opt.correct})">
+          <span class="quiz-num">${String.fromCharCode(65+oi)}.</span>
+          <span>${opt.text}</span>
+        </div>
+      `).join('')}
+      <div class="feedback-box" id="fb${qi}"></div>
+    `;
+    container.appendChild(qDiv);
+  });
+}
+
+function answerQuiz(qi, oi, correct) {
+  if (quizAnswered[qi]) return;
+  quizAnswered[qi] = true;
+  const q = QUIZ[qi];
+  // Style all options
+  q.options.forEach((opt, i) => {
+    const el = document.getElementById(`q${qi}o${i}`);
+    el.classList.add('disabled');
+    if (opt.correct) el.classList.add('correct');
+    else if (i === oi && !opt.correct) el.classList.add('wrong');
+  });
+  const fb = document.getElementById(`fb${qi}`);
+  fb.classList.add('show');
+  if (correct) {
+    fb.innerHTML = q.feedback;
+    fb.style.borderColor = 'var(--green)';
+    showToast('✅ Correct! Great thinking!');
+  } else {
+    fb.innerHTML = `<strong style="color:var(--red)">Not quite.</strong> ${q.wrongFeedback}`;
+    fb.classList.add('wrong-fb');
+    fb.style.borderColor = 'var(--red)';
+    showToast('❌ Incorrect — read the explanation below!');
+  }
+  if (quizAnswered.every(Boolean)) {
+    setTimeout(() => showToast('🎉 Lab Complete! You\'ve mastered meiosis!'), 1200);
+  }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function resetLab() {
+  // Reset genes
+  Object.keys(state.genes).forEach(k => state.genes[k] = null);
+  state.crossoverDone = false;
+  state.currentStage = 0;
+  // Reset loci
+  document.querySelectorAll('.locus').forEach(l => {
+    l.classList.remove('filled', 'drag-over');
+    l.style.background = '';
+    l.style.borderColor = '';
+    l.querySelector('.locus-gene').textContent = '';
+  });
+  // Reset gene chips
+  document.querySelectorAll('.gene-chip').forEach(c => c.classList.remove('used', 'dragging'));
+  // Hide steps
+  document.getElementById('step2').classList.add('hidden');
+  document.getElementById('step3').classList.add('hidden');
+  document.getElementById('step4').classList.add('hidden');
+  updateFillStatus();
+  showToast('🔄 Lab reset! Place your genes again.');
+}
+
+// ============================================================
+// SCROLL REVEAL
+// ============================================================
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Init
+updateFillStatus();
+</script>
 </body>
 </html>
