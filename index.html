@@ -142,10 +142,13 @@
   .gene-no-freckles { background: rgba(139,92,246,0.15); border-color: #8b5cf6; color: #c4b5fd; }
   .gene-green-eyes  { background: rgba(34,197,94,0.15); border-color: #22c55e; color: #86efac; }
   .gene-hazel-eyes  { background: rgba(161,98,7,0.15); border-color: #a16207; color: #facc15; }
-  .gene-blonde-hair { background: rgba(250,204,21,0.15); border-color: #facc15; color: #fde68a; }
-  .gene-red-hair    { background: rgba(220,38,38,0.15); border-color: #dc2626; color: #fca5a5; }
-  .gene-medium      { background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #7dd3fc; }
-  .gene-light-freckles { background: rgba(244,114,182,0.15); border-color: #f472b6; color: #f9a8d4; }
+
+    .gene-blonde-hair { background: rgba(250,204,21,0.15); border-color: #facc15; color: #fde68a; }
+    .gene-red-hair    { background: rgba(220,38,38,0.15); border-color: #dc2626; color: #fca5a5; }
+
+    .gene-medium      { background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #7dd3fc; }
+
+    .gene-light-freckles { background: rgba(244,114,182,0.15); border-color: #f472b6; color: #f9a8d4; }
 
   /* CHROMOSOME SETUP */
   .chr-workspace {
@@ -447,9 +450,12 @@
       <div class="gene-bank" id="gene-bank">
         <div class="gene-chip gene-green-eyes" draggable="true" data-gene="green-eyes" data-label="👁️ Green Eyes" data-color="#22c55e">👁️ Green Eyes</div>
         <div class="gene-chip gene-hazel-eyes" draggable="true" data-gene="hazel-eyes" data-label="👁️ Hazel Eyes" data-color="#a16207">👁️ Hazel Eyes</div>
+
         <div class="gene-chip gene-blonde-hair" draggable="true" data-gene="blonde-hair" data-label="💇 Blonde Hair" data-color="#facc15">💇 Blonde Hair</div>
         <div class="gene-chip gene-red-hair" draggable="true" data-gene="red-hair" data-label="💇 Red Hair" data-color="#dc2626">💇 Red Hair</div>
+
         <div class="gene-chip gene-medium" draggable="true" data-gene="medium" data-label="📏 Medium" data-color="#38bdf8">📏 Medium</div>
+
         <div class="gene-chip gene-light-freckles" draggable="true" data-gene="light-freckles" data-label="✨ Light Freckles" data-color="#f472b6">✨ Light Freckles</div>
         <div class="gene-chip gene-blue-eyes" draggable="true" data-gene="blue-eyes" data-label="👁️ Blue Eyes" data-color="#3b82f6">👁️ Blue Eyes</div>
         <div class="gene-chip gene-brown-eyes" draggable="true" data-gene="brown-eyes" data-label="👁️ Brown Eyes" data-color="#b45309">👁️ Brown Eyes</div>
@@ -653,11 +659,14 @@ const GENE_DATA = {
   'freckles':     { label: 'Freckles',    emoji: '✨', short: 'Freck', color: '#ec4899', bg: 'rgba(236,72,153,0.2)' },
   'no-freckles':  { label: 'No Freckles', emoji: '🚫', short: 'No Fk', color: '#8b5cf6', bg: 'rgba(139,92,246,0.2)' },
   'green-eyes':   { label: 'Green Eyes', emoji: '👁️', short: 'Gr.Eye', color: '#22c55e', bg: 'rgba(34,197,94,0.2)' },
-  'hazel-eyes':   { label: 'Hazel Eyes', emoji: '👁️', short: 'Hz.Eye', color: '#a16207', bg: 'rgba(161,98,7,0.2)' },
-  'blonde-hair':  { label: 'Blonde Hair', emoji: '💇', short: 'Bl.Hair', color: '#facc15', bg: 'rgba(250,204,21,0.2)' },
-  'red-hair':     { label: 'Red Hair', emoji: '💇', short: 'Rd.Hair', color: '#dc2626', bg: 'rgba(220,38,38,0.2)' },
-  'medium':       { label: 'Medium Height', emoji: '📏', short: 'Med', color: '#38bdf8', bg: 'rgba(56,189,248,0.2)' },
-  'light-freckles': { label: 'Light Freckles', emoji: '✨', short: 'Lt.Fk', color: '#f472b6', bg: 'rgba(244,114,182,0.2)' },
+    'hazel-eyes':   { label: 'Hazel Eyes', emoji: '👁️', short: 'Hz.Eye', color: '#a16207', bg: 'rgba(161,98,7,0.2)' },
+
+    'blonde-hair':  { label: 'Blonde Hair', emoji: '💇', short: 'Bl.Hair', color: '#facc15', bg: 'rgba(250,204,21,0.2)' },
+    'red-hair':     { label: 'Red Hair', emoji: '💇', short: 'Rd.Hair', color: '#dc2626', bg: 'rgba(220,38,38,0.2)' },
+
+    'medium':       { label: 'Medium Height', emoji: '📏', short: 'Med', color: '#38bdf8', bg: 'rgba(56,189,248,0.2)' },
+
+    'light-freckles': { label: 'Light Freckles', emoji: '✨', short: 'Lt.Fk', color: '#f472b6', bg: 'rgba(244,114,182,0.2)' },
 };
 
 const STAGES = [
@@ -792,8 +801,13 @@ function dropOnLocus(locus, gene) {
   const trait = locus.dataset.trait;
   const gd = GENE_DATA[gene];
   if (!gd) return;
-  const traitMap = { eye: ['blue-eyes','brown-eyes','green-eyes','hazel-eyes'], hair: ['brown-hair','black-hair','blonde-hair','red-hair'], height: ['tall','medium','short'], freckles: ['freckles','light-freckles','no-freckles'] 
-};  if (!traitMap[trait]?.includes(gene)) {
+  const traitMap = { 
+  eye: ['blue-eyes','brown-eyes','green-eyes','hazel-eyes'], 
+  hair: ['brown-hair','black-hair','blonde-hair','red-hair'], 
+  height: ['tall','medium','short'], 
+  freckles: ['freckles','light-freckles','no-freckles'] 
+};
+  if (!traitMap[trait]?.includes(gene)) {
     showToast(`⚠️ That gene doesn't belong on this locus! Try the correct trait slot.`);
     return;
   }
@@ -951,30 +965,48 @@ function renderStage() {
   const g = state.currentStage;
 
   if (g <= 3) {
-    // MEIOSIS I — 1 cell
-    drawCellMembrane(svg, W/2, H/2, W/2-10, H/2-10, '#7c3aed');
-    renderMeiosisILayout(svg, s.layout, W, H);
-  } else {
-    // MEIOSIS II — 2 cells side by side
-    drawCellMembrane(svg, W/4, H/2, W/4-10, H/2-10, '#06b6d4');
-    drawCellMembrane(svg, 3*W/4, H/2, W/4-10, H/2-10, '#06b6d4');
-    renderMeiosisIILayout(svg, s.layout, W, H);
-  }
+  const showNucleus = (g === 0 || g === 3); 
+  // Prophase I (early) + Telophase I = visible
+  // Metaphase I & Anaphase I = gone
+
+  drawCellMembrane(svg, W/2, H/2, W/2-10, H/2-10, '#7c3aed', showNucleus);
+  renderMeiosisILayout(svg, s.layout, W, H);
+}
+  else {
+  const showNucleus = (g === 4 || g === 7);
+  // Prophase II (early) + Telophase II = visible
+
+  drawCellMembrane(svg, W/4, H/2, W/4-10, H/2-10, '#06b6d4', showNucleus);
+  drawCellMembrane(svg, 3*W/4, H/2, W/4-10, H/2-10, '#06b6d4', showNucleus);
+
+  renderMeiosisIILayout(svg, s.layout, W, H);
+}
 }
 
-function drawCellMembrane(svg, cx, cy, rx, ry, color) {
-  const el = svgEl('ellipse', { cx, cy, rx, ry,
+function drawCellMembrane(svg, cx, cy, rx, ry, color, showNucleus = true) {
+  const el = svgEl('ellipse', {
+    cx, cy, rx, ry,
     fill: 'rgba(255,255,255,0.02)',
-    stroke: color, 'stroke-width': '2',
+    stroke: color,
+    'stroke-width': '2',
     'stroke-dasharray': '6 3',
     opacity: '0.7'
   });
   svg.appendChild(el);
-  // Nucleus hint
-  const nuc = svgEl('ellipse', { cx, cy, rx: rx*0.35, ry: ry*0.35,
-    fill: 'none', stroke: color, 'stroke-width': '1', opacity: '0.25'
-  });
-  svg.appendChild(nuc);
+
+  // ✅ Only draw nucleus if allowed
+  if (showNucleus) {
+    const nuc = svgEl('ellipse', {
+      cx, cy,
+      rx: rx * 0.35,
+      ry: ry * 0.35,
+      fill: 'none',
+      stroke: color,
+      'stroke-width': '1',
+      opacity: '0.25'
+    });
+    svg.appendChild(nuc);
+  }
 }
 
 function svgEl(tag, attrs, text) {
@@ -1046,21 +1078,51 @@ function renderMeiosisILayout(svg, layout, W, H) {
       break;
     }
     case 'metaphase1': {
-      // Line up at metaphase plate
-      drawChromosome(svg, cx-65, cy, '1M', true, 'vertical', 1);
-      drawChromosome(svg, cx-35, cy, '1P', true, 'vertical', 1);
-      drawChromosome(svg, cx+35, cy, '2M', true, 'vertical', 1);
-      drawChromosome(svg, cx+65, cy, '2P', true, 'vertical', 1);
-      // Metaphase plate
-      const plate = svgEl('line', { x1: cx, y1: cy-H*0.38, x2: cx, y2: cy+H*0.38, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': '2', 'stroke-dasharray': '4 3' });
-      svg.appendChild(plate);
-      // Spindle fibers
-      [cx-65, cx-35, cx+35, cx+65].forEach(x => {
-        svg.appendChild(svgEl('line', { x1: cx-W*0.4, y1: cy, x2: x, y2: cy-30, stroke: '#ef4444', 'stroke-width': '1', opacity: '0.5' }));
-        svg.appendChild(svgEl('line', { x1: cx+W*0.4, y1: cy, x2: x, y2: cy+30, stroke: '#ef4444', 'stroke-width': '1', opacity: '0.5' }));
-      });
-      addLabel(svg, cx, cy+H*0.38, 'Pairs align at center (metaphase plate)', '#ef4444');
-      break;
+        // Draw the equatorial plate as a horizontal line through the center
+        const plate = svgEl('line', {
+        x1: cx - W * 0.38,
+        y1: cy,
+        x2: cx + W * 0.38,
+        y2: cy,
+        stroke: 'rgba(255,255,255,0.3)',
+        'stroke-width': '2',
+        'stroke-dasharray': '5 4'});
+        svg.appendChild(plate);
+
+        // Pair 1 tetrad — sits ABOVE the equatorial plate, centered left
+        drawChromosome(svg, cx - 90, cy - 16, '1M', true, 'vertical', 1);
+        drawChromosome(svg, cx - 55, cy - 16, '1P', true, 'vertical', 1);
+
+        // Pair 2 tetrad — sits ABOVE the equatorial plate, centered right
+        drawChromosome(svg, cx + 55, cy - 16, '2M', true, 'vertical', 1);
+        drawChromosome(svg, cx + 90, cy - 16, '2P', true, 'vertical', 1);
+
+        // Spindle fiber lines from poles to each tetrad
+        const poleLeft  = { x: 60,     y: cy };
+        const poleRight = { x: W - 60, y: cy };
+        const tetrads = [
+            { x: cx - 72, y: cy - 16 },
+            { x: cx,      y: cy - 16 },
+            { x: cx + 72, y: cy - 16 },
+        ];
+        [cx - 72, cx - 72, cx + 72, cx + 72].forEach((tx, i) => {
+            const ty = cy - 16;
+            const fromLeft  = svgEl('line', { x1: poleLeft.x,  y1: poleLeft.y,  x2: tx, y2: ty, stroke: 'rgba(239,68,68,0.25)', 'stroke-width': '1', 'stroke-dasharray': '3 3' });
+            const fromRight = svgEl('line', { x1: poleRight.x, y1: poleRight.y, x2: tx, y2: ty, stroke: 'rgba(239,68,68,0.25)', 'stroke-width': '1', 'stroke-dasharray': '3 3' });
+            svg.appendChild(fromLeft);
+            svg.appendChild(fromRight);
+        });
+
+        // Pole dots
+        [poleLeft, poleRight].forEach(p => {
+            const dot = svgEl('circle', { cx: p.x, cy: p.y, r: '6', fill: 'none', stroke: 'rgba(239,68,68,0.45)', 'stroke-width': '1.5' });
+            svg.appendChild(dot);
+        });
+
+        addLabel(svg, cx, cy + H * 0.38, 'Tetrads aligned at the equatorial plate', '#ef4444');
+        addLabel(svg, 60, cy - 16, '← Pole', '#ef4444', '8');
+        addLabel(svg, W - 60, cy - 16, 'Pole →', '#ef4444', '8');
+        break;
     }
     case 'anaphase1': {
       // Pairs pulled to poles
