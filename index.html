@@ -448,8 +448,9 @@
       <div class="logo-dna">🧬</div>
       <div>
         <h1>Gene Journey: <span>Meiosis Lab</span></h1>
-        <div class="subtitle">Nikolai Federico Martin Laura Matilde</div>
+        <div class="subtitle">Nikolai & Federico</div>
       </div>
+      <div class="lab-badge">BIO-401</div>
     </div>
   </header>
 
@@ -548,6 +549,7 @@
       <button class="btn btn-primary pulse" id="start-meiosis-btn" disabled onclick="startMeiosis()">
         🔬 Start Meiosis
       </button>
+      <button class="btn btn-cyan" onclick="randomizeGenes()">🎲 Randomize Genes</button>
       <button class="btn btn-secondary" onclick="resetLab()">↺ Reset Lab</button>
       <span id="fill-status" style="font-size:0.76rem;color:var(--muted);align-self:center;font-family:'IBM Plex Mono',monospace;"></span>
     </div>
@@ -1037,39 +1039,89 @@ function renderMeiosisILayout(svg, layout, W, H) {
       break;
     }
     case 'metaphase1': {
-      // Equatorial plate — horizontal line through center
+      // Left and right poles
+      const poleL1 = { x: 38, y: cy };
+      const poleR1 = { x: W - 38, y: cy };
+
+      // Pole: filled circle + label
+      [poleL1, poleR1].forEach((p, i) => {
+        svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: '10', fill: '#c0392b', opacity: '0.85' }));
+        svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: '14', fill: 'none', stroke: '#c0392b', 'stroke-width': '1.5', opacity: '0.4' }));
+        const lbl = svgEl('text', { x: p.x, y: p.y + 24, 'text-anchor': 'middle', 'font-size': '8', fill: '#c0392b', 'font-family': 'IBM Plex Mono', 'font-weight': '600' });
+        lbl.textContent = i === 0 ? '← Pole' : 'Pole →';
+        svg.appendChild(lbl);
+      });
+
+      // Vertical equatorial plate through center
       svg.appendChild(svgEl('line', {
-        x1: cx - W*0.38, y1: cy,
-        x2: cx + W*0.38, y2: cy,
-        stroke: 'rgba(192,57,43,0.35)',
+        x1: cx, y1: cy - H*0.42,
+        x2: cx, y2: cy + H*0.42,
+        stroke: 'rgba(192,57,43,0.4)',
         'stroke-width': '2',
         'stroke-dasharray': '6 4'
       }));
 
-      // Pair 1 tetrad — left of center, sitting along the plate
-      drawChromosome(svg, cx - 90, cy - 16, '1M', true, 'vertical', 1);
-      drawChromosome(svg, cx - 55, cy - 16, '1P', true, 'vertical', 1);
+      // Tetrad 1 ABOVE equator — centromeres sit on the plate line
+      const t1Mx = cx - 14, t1Px = cx + 14, t1y = cy - 90;
+      // Tetrad 2 BELOW equator
+      const t2Mx = cx - 14, t2Px = cx + 14, t2y = cy + 90;
 
-      // Pair 2 tetrad — right of center, sitting along the plate
-      drawChromosome(svg, cx + 55, cy - 16, '2M', true, 'vertical', 1);
-      drawChromosome(svg, cx + 90, cy - 16, '2P', true, 'vertical', 1);
-
-      // Spindle fibers from left pole
-      const poleL = { x: 55, y: cy };
-      const poleR = { x: W - 55, y: cy };
-      [[cx-72, cy-16], [cx-72, cy-16], [cx+72, cy-16], [cx+72, cy-16]].forEach(([tx, ty]) => {
-        svg.appendChild(svgEl('line', { x1: poleL.x, y1: poleL.y, x2: tx, y2: ty, stroke: 'rgba(192,57,43,0.2)', 'stroke-width': '1', 'stroke-dasharray': '3 3' }));
-        svg.appendChild(svgEl('line', { x1: poleR.x, y1: poleR.y, x2: tx, y2: ty, stroke: 'rgba(192,57,43,0.2)', 'stroke-width': '1', 'stroke-dasharray': '3 3' }));
+      // Spindle fibers: from each pole to each centromere
+      // Tetrad 1
+      [[poleL1, t1Mx, t1y],[poleL1, t1Px, t1y],[poleR1, t1Mx, t1y],[poleR1, t1Px, t1y]].forEach(([pole, tx, ty]) => {
+        svg.appendChild(svgEl('line', { x1: pole.x, y1: pole.y, x2: tx, y2: ty, stroke: '#c0392b', 'stroke-width': '1', opacity: '0.3', 'stroke-dasharray': '4 3' }));
+      });
+      // Tetrad 2
+      [[poleL1, t2Mx, t2y],[poleL1, t2Px, t2y],[poleR1, t2Mx, t2y],[poleR1, t2Px, t2y]].forEach(([pole, tx, ty]) => {
+        svg.appendChild(svgEl('line', { x1: pole.x, y1: pole.y, x2: tx, y2: ty, stroke: '#c0392b', 'stroke-width': '1', opacity: '0.3', 'stroke-dasharray': '4 3' }));
       });
 
-      // Pole markers
-      [poleL, poleR].forEach(p => {
-        svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: '7', fill: 'none', stroke: 'rgba(192,57,43,0.4)', 'stroke-width': '1.5' }));
-      });
+      // Draw X-shaped chromosomes
+      function drawXChr(sx, sy, chrKey, sc) {
+        const c = CHR_COLORS[chrKey];
+        const s = sc || 1;
+        const g = svgEl('g', { transform: `translate(${sx},${sy})` });
+        // Four arms fanning out from centromere
+        [[-1,-1],[ 1,-1],[-1, 1],[ 1, 1]].forEach(([dx, dy]) => {
+          const arm = svgEl('path', {
+            d: `M0,0 C${dx*7*s},${dy*5*s} ${dx*13*s},${dy*14*s} ${dx*10*s},${dy*32*s} C${dx*8*s},${dy*42*s} ${dx*2*s},${dy*44*s} 0,${dy*44*s}`,
+            fill: c.fill, stroke: c.stroke, 'stroke-width': '1', 'fill-rule': 'nonzero'
+          });
+          g.appendChild(arm);
+        });
+        // Centromere
+        g.appendChild(svgEl('circle', { cx: 0, cy: 0, r: `${5*s}`, fill: 'white', opacity: '0.4' }));
+        svg.appendChild(g);
+      }
 
-      addLabel(svg, cx, cy + H*0.38, 'Tetrads aligned at equatorial plate', '#c0392b');
-      addLabel(svg, 55,     cy - 18, '← Pole', '#c0392b', '8');
-      addLabel(svg, W - 55, cy - 18, 'Pole →', '#c0392b', '8');
+      drawXChr(t1Mx, t1y, '1M', 0.85);
+      drawXChr(t1Px, t1y, '1P', 0.85);
+      drawXChr(t2Mx, t2y, '2M', 0.85);
+      drawXChr(t2Px, t2y, '2P', 0.85);
+
+      // Gene dots on the arms
+      function dotGene1(x, y, key) {
+        const gene = state.genes[key];
+        if (!gene) return;
+        const d = GENE_DATA[gene];
+        svg.appendChild(svgEl('circle', { cx: x, cy: y, r: '9', fill: d.color, stroke: 'white', 'stroke-width': '1.5', opacity: '0.95' }));
+        const t = svgEl('text', { x, y: y + 3, 'text-anchor': 'middle', 'font-size': '7', fill: 'white', 'font-weight': 'bold', 'font-family': 'IBM Plex Mono' });
+        t.textContent = d.emoji;
+        svg.appendChild(t);
+      }
+      // Tetrad 1 genes (upper arms = top gene, lower arms = bot gene)
+      dotGene1(t1Mx - 9,  t1y - 36, '1M-top');
+      dotGene1(t1Mx - 9,  t1y + 36, '1M-bot');
+      dotGene1(t1Px + 9,  t1y - 36, '1P-top');
+      dotGene1(t1Px + 9,  t1y + 36, '1P-bot');
+      // Tetrad 2 genes
+      dotGene1(t2Mx - 9,  t2y - 36, '2M-top');
+      dotGene1(t2Mx - 9,  t2y + 36, '2M-bot');
+      dotGene1(t2Px + 9,  t2y - 36, '2P-top');
+      dotGene1(t2Px + 9,  t2y + 36, '2P-bot');
+
+      addLabel(svg, cx + 60, cy, 'Equatorial plate', '#c0392b', '8');
+      addLabel(svg, cx, H - 8, 'Tetrads aligned — one above, one below the plate', '#c0392b', '9');
       break;
     }
     case 'anaphase1': {
@@ -1119,11 +1171,68 @@ function renderMeiosisIILayout(svg, layout, W, H) {
     }
     case 'metaphase2': {
       cells.forEach(cell => {
-        drawChromosome(svg, cell.cx-18, cy, cell.chrA, true, 'vertical', 0.85);
-        drawChromosome(svg, cell.cx+18, cy, cell.chrB, true, 'vertical', 0.85);
-        svg.appendChild(svgEl('line', { x1: cell.cx, y1: cy-H*0.35, x2: cell.cx, y2: cy+H*0.35, stroke: 'rgba(26,122,74,0.15)', 'stroke-width': '1.5', 'stroke-dasharray': '4 3' }));
+        const cellW = W/4 - 10;
+        // Left and right poles for this cell
+        const pL = { x: cell.cx - cellW + 10, y: cy };
+        const pR = { x: cell.cx + cellW - 10, y: cy };
+
+        // Pole dots
+        [pL, pR].forEach((p, i) => {
+          svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: '8', fill: '#c0392b', opacity: '0.8' }));
+          svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: '12', fill: 'none', stroke: '#c0392b', 'stroke-width': '1.2', opacity: '0.35' }));
+        });
+
+        // Vertical equatorial plate
+        svg.appendChild(svgEl('line', {
+          x1: cell.cx, y1: cy - H*0.35,
+          x2: cell.cx, y2: cy + H*0.35,
+          stroke: 'rgba(192,57,43,0.4)', 'stroke-width': '1.5', 'stroke-dasharray': '5 3'
+        }));
+
+        // Chromosome positions (one above, one below plate)
+        const chrAy = cy - 70, chrBy = cy + 70;
+
+        // Spindle fibers from each pole to each chromosome centromere
+        [[pL, cell.cx, chrAy],[pR, cell.cx, chrAy],[pL, cell.cx, chrBy],[pR, cell.cx, chrBy]].forEach(([pole, tx, ty]) => {
+          svg.appendChild(svgEl('line', { x1: pole.x, y1: pole.y, x2: tx, y2: ty, stroke: '#c0392b', 'stroke-width': '1', opacity: '0.3', 'stroke-dasharray': '4 3' }));
+        });
+
+        // Draw chromosomes (X-shaped, one above/one below plate)
+        function drawXChr2(sx, sy, chrKey, sc) {
+          const c = CHR_COLORS[chrKey];
+          const s = sc || 0.75;
+          const grp = svgEl('g', { transform: `translate(${sx},${sy})` });
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([dx, dy]) => {
+            grp.appendChild(svgEl('path', {
+              d: `M0,0 C${dx*6*s},${dy*5*s} ${dx*11*s},${dy*12*s} ${dx*9*s},${dy*28*s} C${dx*7*s},${dy*36*s} ${dx*2*s},${dy*38*s} 0,${dy*38*s}`,
+              fill: c.fill, stroke: c.stroke, 'stroke-width': '1'
+            }));
+          });
+          grp.appendChild(svgEl('circle', { cx: 0, cy: 0, r: `${4*s}`, fill: 'white', opacity: '0.4' }));
+          svg.appendChild(grp);
+        }
+
+        drawXChr2(cell.cx, chrAy, cell.chrA, 0.75);
+        drawXChr2(cell.cx, chrBy, cell.chrB, 0.75);
+
+        // Gene dots
+        function dotG2(x, y, key) {
+          const gene = state.genes[key];
+          if (!gene) return;
+          const d = GENE_DATA[gene];
+          svg.appendChild(svgEl('circle', { cx: x, cy: y, r: '8', fill: d.color, stroke: 'white', 'stroke-width': '1.5', opacity: '0.95' }));
+          const t = svgEl('text', { x, y: y + 3, 'text-anchor': 'middle', 'font-size': '6', fill: 'white', 'font-weight': 'bold', 'font-family': 'IBM Plex Mono' });
+          t.textContent = d.emoji;
+          svg.appendChild(t);
+        }
+        const isLeft = cell.cx < W/2;
+        const [tA, tB] = isLeft ? [['1M-top','1M-bot'],['2M-top','2M-bot']] : [['1P-top','1P-bot'],['2P-top','2P-bot']];
+        dotG2(cell.cx - 10, chrAy - 26, tA[0]);
+        dotG2(cell.cx - 10, chrAy + 26, tA[1]);
+        dotG2(cell.cx - 10, chrBy - 26, tB[0]);
+        dotG2(cell.cx - 10, chrBy + 26, tB[1]);
       });
-      addLabel(svg, W/2, 20, 'Both cells aligning chromosomes individually', '#1a7a4a', '10');
+      addLabel(svg, W/2, 14, 'Individual chromosomes aligned — sister chromatids ready to separate', '#1a7a4a', '9');
       break;
     }
     case 'anaphase2': {
@@ -1306,7 +1415,60 @@ function showToast(msg) {
   t._timer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-function resetLab() {
+function randomizeGenes() {
+  // First do a full reset of loci and chip states
+  Object.keys(state.genes).forEach(k => state.genes[k] = null);
+  document.querySelectorAll('.locus').forEach(l => {
+    l.classList.remove('filled', 'drag-over');
+    l.style.background = '';
+    l.style.borderColor = '';
+    l.querySelector('.locus-gene').textContent = '';
+  });
+  document.querySelectorAll('.gene-chip').forEach(c => c.classList.remove('used', 'dragging'));
+
+  // Pool of valid genes per trait
+  const pool = {
+    eye:      ['blue-eyes','brown-eyes','green-eyes','hazel-eyes'],
+    height:   ['tall','medium','short'],
+    hair:     ['brown-hair','black-hair','blonde-hair','red-hair'],
+    freckles: ['freckles','light-freckles','no-freckles'],
+  };
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  // Each locus key maps to a trait
+  const locusTraits = {
+    '1M-top': 'eye',    '1M-bot': 'height',
+    '1P-top': 'eye',    '1P-bot': 'height',
+    '2M-top': 'hair',   '2M-bot': 'freckles',
+    '2P-top': 'hair',   '2P-bot': 'freckles',
+  };
+
+  // Assign a random valid gene to each locus
+  Object.entries(locusTraits).forEach(([key, trait]) => {
+    state.genes[key] = pick(pool[trait]);
+  });
+
+  // Reflect chosen genes onto the DOM loci
+  document.querySelectorAll('.locus').forEach(locus => {
+    const key = `${locus.dataset.chr}${locus.dataset.homolog}-${locus.dataset.locus}`;
+    const gene = state.genes[key];
+    if (!gene) return;
+    const d = GENE_DATA[gene];
+    locus.classList.add('filled');
+    locus.style.background = d.bg;
+    locus.style.borderColor = d.color;
+    const span = locus.querySelector('.locus-gene');
+    span.textContent = d.emoji + ' ' + d.short;
+    span.style.color = d.color;
+    // Mark the chip as used
+    document.querySelector(`[data-gene="${gene}"]`)?.classList.add('used');
+  });
+
+  updateFillStatus();
+  showToast('🎲 Genes randomized!');
+}
+
+
   Object.keys(state.genes).forEach(k => state.genes[k] = null);
   state.crossoverDone = false;
   state.currentStage = 0;
@@ -1322,7 +1484,7 @@ function resetLab() {
   document.getElementById('step4').classList.add('hidden');
   updateFillStatus();
   showToast('↺ Lab reset.');
-}
+
 
 // ============================================================
 // SCROLL REVEAL
