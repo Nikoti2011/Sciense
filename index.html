@@ -1125,30 +1125,285 @@ function renderMeiosisILayout(svg, layout, W, H) {
       break;
     }
     case 'anaphase1': {
-      drawChromosome(svg, cx-120, cy-70, '1M', true, 'vertical', 0.9);
-      drawChromosome(svg, cx-80,  cy-70, '2M', true, 'vertical', 0.9);
-      drawChromosome(svg, cx+80,  cy+70, '1P', true, 'vertical', 0.9);
-      drawChromosome(svg, cx+120, cy+70, '2P', true, 'vertical', 0.9);
-      ['↖','↘'].forEach((a, i) => {
-        const t = svgEl('text', { x: cx + (i===0?-50:50), y: cy, 'text-anchor': 'middle', 'font-size': '22', fill: 'rgba(192,57,43,0.5)' });
-        t.textContent = a;
-        svg.appendChild(t);
-      });
-      addLabel(svg, cx-100, cy-H*0.4, 'Maternal copies', '#1a7a4a');
-      addLabel(svg, cx+100, cy+H*0.4, 'Paternal copies', '#0f7f8c');
-      break;
-    }
+  // Poles (matching Metaphase I pole positions)
+  const poleL = { x: 38, y: cy };
+  const poleR = { x: W - 38, y: cy };
+
+  // Draw poles (matching Metaphase I style)
+  [poleL, poleR].forEach((p, i) => {
+    svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: '10', fill: '#c0392b', opacity: '0.85' }));
+    svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: '14', fill: 'none', stroke: '#c0392b', 'stroke-width': '1.5', opacity: '0.4' }));
+    const lbl = svgEl('text', { x: p.x, y: p.y + 24, 'text-anchor': 'middle', 'font-size': '8', fill: '#c0392b', 'font-family': 'IBM Plex Mono', 'font-weight': '600' });
+    lbl.textContent = i === 0 ? '← Pole' : 'Pole →';
+    svg.appendChild(lbl);
+  });
+
+  // Faint equatorial plate (chromosomes have left it — ghost reference)
+  svg.appendChild(svgEl('line', {
+    x1: cx, y1: cy - H * 0.42,
+    x2: cx, y2: cy + H * 0.42,
+    stroke: 'rgba(192,57,43,0.15)',
+    'stroke-width': '1.5',
+    'stroke-dasharray': '6 4'
+  }));
+
+  // Chromosome positions:
+  // Tetrad 1 was above center (cy - 90 in Metaphase I).
+  //   1M → pulled LEFT pole, 1P → pulled RIGHT pole
+  // Tetrad 2 was below center (cy + 90 in Metaphase I).
+  //   2M → pulled LEFT pole, 2P → pulled RIGHT pole
+  // Each X-shaped chromosome has moved ~halfway to its pole.
+  const leftTopX  = cx - 160, leftTopY  = cy - 75;  // 1M, upper track → left
+  const rightTopX = cx + 160, rightTopY = cy - 75;  // 1P, upper track → right
+  const leftBotX  = cx - 160, leftBotY  = cy + 75;  // 2M, lower track → left
+  const rightBotX = cx + 160, rightBotY = cy + 75;  // 2P, lower track → right
+
+  // Spindle fibers from each pole to its chromosome's centromere
+  [
+    [poleL, leftTopX,  leftTopY ],  // pole ← 1M
+    [poleR, rightTopX, rightTopY],  // pole → 1P
+    [poleL, leftBotX,  leftBotY ],  // pole ← 2M
+    [poleR, rightBotX, rightBotY],  // pole → 2P
+  ].forEach(([pole, tx, ty]) => {
+    svg.appendChild(svgEl('line', {
+      x1: pole.x, y1: pole.y,
+      x2: tx, y2: ty,
+      stroke: '#c0392b', 'stroke-width': '1.2', opacity: '0.4', 'stroke-dasharray': '5 3'
+    }));
+  });
+
+  // Draw X-shaped chromosomes (sister chromatids STILL JOINED)
+  // Same drawXChr helper as Metaphase I
+  function drawXChrA1(sx, sy, chrKey, sc) {
+    const c = CHR_COLORS[chrKey];
+    const s = sc || 0.85;
+    const grp = svgEl('g', { transform: `translate(${sx},${sy})` });
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([dx, dy]) => {
+      grp.appendChild(svgEl('path', {
+        d: `M0,0 C${dx*7*s},${dy*5*s} ${dx*13*s},${dy*14*s} ${dx*10*s},${dy*32*s} C${dx*8*s},${dy*42*s} ${dx*2*s},${dy*44*s} 0,${dy*44*s}`,
+        fill: c.fill, stroke: c.stroke, 'stroke-width': '1', 'fill-rule': 'nonzero'
+      }));
+    });
+    grp.appendChild(svgEl('circle', { cx: 0, cy: 0, r: `${5*s}`, fill: 'white', opacity: '0.4' }));
+    svg.appendChild(grp);
+  }
+
+  drawXChrA1(leftTopX,  leftTopY,  '1M', 0.85);
+  drawXChrA1(rightTopX, rightTopY, '1P', 0.85);
+  drawXChrA1(leftBotX,  leftBotY,  '2M', 0.85);
+  drawXChrA1(rightBotX, rightBotY, '2P', 0.85);
+
+  // Gene dots (same helper style as Metaphase I)
+  function dotGeneA1(x, y, key) {
+    const gene = state.genes[key];
+    if (!gene) return;
+    const d = GENE_DATA[gene];
+    svg.appendChild(svgEl('circle', { cx: x, cy: y, r: '9', fill: d.color, stroke: 'white', 'stroke-width': '1.5', opacity: '0.95' }));
+    const t = svgEl('text', { x, y: y + 3, 'text-anchor': 'middle', 'font-size': '7', fill: 'white', 'font-weight': 'bold', 'font-family': 'IBM Plex Mono' });
+    t.textContent = d.emoji;
+    svg.appendChild(t);
+  }
+
+  // Upper arm = top gene, lower arm = bot gene (matching Metaphase I dot offsets)
+  dotGeneA1(leftTopX  - 9, leftTopY  - 36, '1M-top');
+  dotGeneA1(leftTopX  - 9, leftTopY  + 36, '1M-bot');
+  dotGeneA1(rightTopX + 9, rightTopY - 36, '1P-top');
+  dotGeneA1(rightTopX + 9, rightTopY + 36, '1P-bot');
+  dotGeneA1(leftBotX  - 9, leftBotY  - 36, '2M-top');
+  dotGeneA1(leftBotX  - 9, leftBotY  + 36, '2M-bot');
+  dotGeneA1(rightBotX + 9, rightBotY - 36, '2P-top');
+  dotGeneA1(rightBotX + 9, rightBotY + 36, '2P-bot');
+
+  // Direction arrows on each chromosome
+  [
+    { x: leftTopX  - 30, y: leftTopY,  arrow: '←' },
+    { x: rightTopX + 30, y: rightTopY, arrow: '→' },
+    { x: leftBotX  - 30, y: leftBotY,  arrow: '←' },
+    { x: rightBotX + 30, y: rightBotY, arrow: '→' },
+  ].forEach(({ x, y, arrow }) => {
+    const t = svgEl('text', { x, y, 'text-anchor': 'middle', 'font-size': '20', fill: 'rgba(192,57,43,0.6)' });
+    t.textContent = arrow;
+    svg.appendChild(t);
+  });
+
+  addLabel(svg, cx - 190, cy,       'Left pole', '#c0392b', '8');
+  addLabel(svg, cx + 190, cy,       'Right pole', '#c0392b', '8');
+  addLabel(svg, leftTopX, cy - H * 0.42, '1M (maternal)', '#1a7a4a', '8');
+  addLabel(svg, rightTopX, cy - H * 0.42, '1P (paternal)', '#0f5530', '8');
+  addLabel(svg, leftBotX, cy + H * 0.42, '2M (maternal)', '#0f7f8c', '8');
+  addLabel(svg, rightBotX, cy + H * 0.42, '2P (paternal)', '#085a64', '8');
+  addLabel(svg, cx, H - 8, 'Homologs separating — sister chromatids remain joined', '#c0392b', '9');
+  break;
+}
     case 'telophase1': {
-      drawCellMembrane(svg, cx-130, cy, 110, 100, '#1a7a4a');
-      drawCellMembrane(svg, cx+130, cy, 110, 100, '#0f7f8c');
-      drawChromosome(svg, cx-150, cy, '1M', true, 'vertical', 0.85);
-      drawChromosome(svg, cx-110, cy, '2M', true, 'vertical', 0.85);
-      drawChromosome(svg, cx+110, cy, '1P', true, 'vertical', 0.85);
-      drawChromosome(svg, cx+150, cy, '2P', true, 'vertical', 0.85);
-      addLabel(svg, cx-130, cy+H*0.44, 'Cell A (n=2)', '#1a7a4a');
-      addLabel(svg, cx+130, cy+H*0.44, 'Cell B (n=2)', '#0f7f8c');
-      break;
-    }
+  // ── Cytokinesis cleavage furrow ──────────────────────────────
+  // A pinched hourglass outline that replaces the single outer membrane.
+  // The cell is visibly squeezing inward at the equator.
+  const pinchDepth = 38;   // how deep the waist pinches in from each side
+  const cellRx    = W / 2 - 14;
+  const cellRy    = H / 2 - 18;
+
+  // Outer cell silhouette as a single pinched path
+  // Left lobe → waist → right lobe, traced as a smooth cubic-bezier outline
+  svg.appendChild(svgEl('path', {
+    d: [
+      // start at top-center
+      `M ${cx} ${cy - cellRy}`,
+      // arc across top-left
+      `C ${cx - cellRx * 0.5} ${cy - cellRy},
+         ${cx - cellRx}       ${cy - cellRy * 0.55},
+         ${cx - cellRx}       ${cy}`,
+      // arc down to bottom-left
+      `C ${cx - cellRx}       ${cy + cellRy * 0.55},
+         ${cx - cellRx * 0.5} ${cy + cellRy},
+         ${cx}                ${cy + cellRy}`,
+      // arc across bottom-right
+      `C ${cx + cellRx * 0.5} ${cy + cellRy},
+         ${cx + cellRx}       ${cy + cellRy * 0.55},
+         ${cx + cellRx}       ${cy}`,
+      // arc back to top-right
+      `C ${cx + cellRx}       ${cy - cellRy * 0.55},
+         ${cx + cellRx * 0.5} ${cy - cellRy},
+         ${cx}                ${cy - cellRy}`,
+      'Z'
+    ].join(' '),
+    fill:           'rgba(26,122,74,0.03)',
+    stroke:         '#1a7a4a',
+    'stroke-width': '2',
+    'stroke-dasharray': '6 3',
+    opacity:        '0.55'
+  }));
+
+  // The cleavage furrow — two curved lines pinching inward from each side
+  // Top pinch line (coming from the left)
+  svg.appendChild(svgEl('path', {
+    d: `M ${cx - cellRx} ${cy}
+        C ${cx - cellRx + 20} ${cy},
+          ${cx - pinchDepth}  ${cy - 18},
+          ${cx}               ${cy - 12}`,
+    fill:           'none',
+    stroke:         '#1a7a4a',
+    'stroke-width': '2.5',
+    'stroke-linecap': 'round'
+  }));
+  // Bottom pinch line (from the right)
+  svg.appendChild(svgEl('path', {
+    d: `M ${cx + cellRx} ${cy}
+        C ${cx + cellRx - 20} ${cy},
+          ${cx + pinchDepth}  ${cy + 18},
+          ${cx}               ${cy + 12}`,
+    fill:           'none',
+    stroke:         '#1a7a4a',
+    'stroke-width': '2.5',
+    'stroke-linecap': 'round'
+  }));
+
+  // ── Nuclear envelopes re-forming ─────────────────────────────
+  // Visible, prominent dashed ovals around each chromosome set.
+  // Larger and more opaque than the outer cell membrane helper.
+  const nucRx = 118, nucRy = 105;
+  const nucLx = cx - 148;   // left nucleus center
+  const nucRxC = cx + 148;  // right nucleus center
+
+  // Left nucleus (maternal side — green)
+  svg.appendChild(svgEl('ellipse', {
+    cx: nucLx, cy,
+    rx: nucRx, ry: nucRy,
+    fill:           'rgba(26,122,74,0.06)',
+    stroke:         '#1a7a4a',
+    'stroke-width': '1.8',
+    'stroke-dasharray': '5 3'
+  }));
+  // Right nucleus (paternal side — teal)
+  svg.appendChild(svgEl('ellipse', {
+    cx: nucRxC, cy,
+    rx: nucRx, ry: nucRy,
+    fill:           'rgba(15,127,140,0.06)',
+    stroke:         '#0f7f8c',
+    'stroke-width': '1.8',
+    'stroke-dasharray': '5 3'
+  }));
+
+  // ── X-shaped chromosomes toward each pole ────────────────────
+  // Looser (less rigid) X-shape via gentler bezier curves.
+  // Positioned close to each pole, not centered.
+  function drawRelaxedX(sx, sy, chrKey, sc) {
+    const c = CHR_COLORS[chrKey];
+    const s = sc || 0.85;
+
+    // Slightly looser arms than Anaphase I — wider C value = more curved/relaxed
+    const grp = svgEl('g', { transform: `translate(${sx},${sy})` });
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([dx, dy]) => {
+      grp.appendChild(svgEl('path', {
+        // More curved than anaphase (dx*9 vs dx*7, extra sag on the outer control)
+        d: `M0,0
+            C${dx*9*s},${dy*6*s}
+             ${dx*15*s},${dy*18*s}
+             ${dx*11*s},${dy*34*s}
+            C${dx*9*s},${dy*43*s}
+             ${dx*3*s},${dy*47*s}
+             0,${dy*47*s}`,
+        fill:           c.fill,
+        stroke:         c.stroke,
+        'stroke-width': '1',
+        'fill-rule':    'nonzero',
+        opacity:        '0.9'    // slightly faded = less condensed
+      }));
+    });
+    // Centromere dot
+    grp.appendChild(svgEl('circle', {
+      cx: 0, cy: 0, r: `${5*s}`,
+      fill: 'white', opacity: '0.35'
+    }));
+    svg.appendChild(grp);
+  }
+
+  // Gene dot helper
+  function dotGeneT1(x, y, key) {
+    const gene = state.genes[key];
+    if (!gene) return;
+    const d = GENE_DATA[gene];
+    svg.appendChild(svgEl('circle', {
+      cx: x, cy: y, r: '9',
+      fill: d.color, stroke: 'white', 'stroke-width': '1.5', opacity: '0.95'
+    }));
+    const t = svgEl('text', {
+      x, y: y + 3, 'text-anchor': 'middle',
+      'font-size': '7', fill: 'white',
+      'font-weight': 'bold', 'font-family': 'IBM Plex Mono'
+    });
+    t.textContent = d.emoji;
+    svg.appendChild(t);
+  }
+
+  // Left cell chromosomes — pushed toward the left pole
+  const lChrAx = nucLx - 26, lChrBx = nucLx + 20;
+  drawRelaxedX(lChrAx, cy, '1M', 0.85);
+  drawRelaxedX(lChrBx, cy, '2M', 0.85);
+
+  // Right cell chromosomes — pushed toward the right pole
+  const rChrAx = nucRxC - 20, rChrBx = nucRxC + 26;
+  drawRelaxedX(rChrAx, cy, '1P', 0.85);
+  drawRelaxedX(rChrBx, cy, '2P', 0.85);
+
+  // Gene dots — offset from centromere same as Anaphase I
+  dotGeneT1(lChrAx - 9, cy - 36, '1M-top');
+  dotGeneT1(lChrAx - 9, cy + 36, '1M-bot');
+  dotGeneT1(lChrBx + 9, cy - 36, '2M-top');
+  dotGeneT1(lChrBx + 9, cy + 36, '2M-bot');
+  dotGeneT1(rChrAx - 9, cy - 36, '1P-top');
+  dotGeneT1(rChrAx - 9, cy + 36, '1P-bot');
+  dotGeneT1(rChrBx + 9, cy - 36, '2P-top');
+  dotGeneT1(rChrBx + 9, cy + 36, '2P-bot');
+
+  // ── Labels ───────────────────────────────────────────────────
+  addLabel(svg, nucLx,  cy + H * 0.43, 'Cell A (n=2)', '#1a7a4a', '9');
+  addLabel(svg, nucRxC, cy + H * 0.43, 'Cell B (n=2)', '#0f7f8c', '9');
+  addLabel(svg, cx, cy, '🔒', '#b58a00', '12');   // cleavage marker at waist
+  addLabel(svg, cx, cy - H * 0.44,
+    'Nuclear envelopes re-forming — cytokinesis beginning', '#1a7a4a', '9');
+  break;
+}
   }
 }
 
@@ -1236,37 +1491,280 @@ function renderMeiosisIILayout(svg, layout, W, H) {
       break;
     }
     case 'anaphase2': {
-      cells.forEach(cell => {
-        drawChromosome(svg, cell.cx-18, cy-75, cell.chrA, true, 'vertical', 0.75);
-        drawChromosome(svg, cell.cx+18, cy-75, cell.chrB, true, 'vertical', 0.75);
-        drawChromosome(svg, cell.cx-18, cy+75, cell.chrA, true, 'vertical', 0.75);
-        drawChromosome(svg, cell.cx+18, cy+75, cell.chrB, true, 'vertical', 0.75);
-        ['↑','↓'].forEach((a,i) => {
-          const t = svgEl('text', { x: cell.cx, y: cy+(i===0?-8:18), 'text-anchor':'middle','font-size':'15', fill:'rgba(192,57,43,0.5)' });
-          t.textContent = a;
-          svg.appendChild(t);
-        });
-      });
-      addLabel(svg, W/2, 20, 'Sister chromatids separating', '#c0392b', '10');
-      break;
+  cells.forEach(cell => {
+    const cellW = W / 4 - 10;
+    const pL = { x: cell.cx - cellW + 10, y: cy };
+    const pR = { x: cell.cx + cellW - 10, y: cy };
+
+    // Poles — matching Metaphase II exactly
+    [pL, pR].forEach((p, i) => {
+      svg.appendChild(svgEl('circle', {
+        cx: p.x, cy: p.y, r: '8', fill: '#c0392b', opacity: '0.8'
+      }));
+      svg.appendChild(svgEl('circle', {
+        cx: p.x, cy: p.y, r: '12',
+        fill: 'none', stroke: '#c0392b', 'stroke-width': '1.2', opacity: '0.35'
+      }));
+    });
+
+    // Ghost equatorial plate — chromosomes have just left it
+    svg.appendChild(svgEl('line', {
+      x1: cell.cx, y1: cy - H * 0.35,
+      x2: cell.cx, y2: cy + H * 0.35,
+      stroke: 'rgba(192,57,43,0.12)',
+      'stroke-width': '1.5',
+      'stroke-dasharray': '5 3'
+    }));
+
+    // In Metaphase II, chrA was above (cy-70) and chrB was below (cy+70).
+    // Now each X has split at the centromere into two rod chromatids
+    // moving horizontally: one chromatid → left pole, other → right pole.
+    // We keep the two vertical tracks (upper: chrA origin, lower: chrB origin).
+    const trackTop = cy - 70;
+    const trackBot = cy + 70;
+
+    // How far each chromatid has moved from center toward its pole
+    const offset = 80;
+
+    // Helper: draw a single rod-shaped chromatid (half of a split X)
+    // direction: -1 = left pole side, +1 = right pole side
+    function drawChromatid(sx, sy, chrKey, direction) {
+      const c = CHR_COLORS[chrKey];
+      const s = 0.7;
+      const W2 = 11 * s, H2 = 46 * s;
+      const grp = svgEl('g', { transform: `translate(${sx},${sy})` });
+
+      // Single rod — tapered at the end that was the centromere
+      grp.appendChild(svgEl('rect', {
+        x: -W2 / 2, y: -H2 / 2,
+        width: W2, height: H2,
+        rx: W2 / 2, ry: W2 / 2,
+        fill: c.fill, stroke: c.stroke, 'stroke-width': '1.2'
+      }));
+
+      // Centromere stub — blunt end facing the center (where it just split)
+      const stubY = direction < 0 ? H2 / 2 : -H2 / 2;
+      grp.appendChild(svgEl('rect', {
+        x: -W2 / 2, y: stubY - 3 * s,
+        width: W2, height: 6 * s,
+        rx: 1,
+        fill: 'rgba(255,255,255,0.3)'
+      }));
+
+      svg.appendChild(grp);
     }
+
+    // Helper: draw gene dot on a chromatid
+    function dotGeneA2(x, y, key) {
+      const gene = state.genes[key];
+      if (!gene) return;
+      const d = GENE_DATA[gene];
+      svg.appendChild(svgEl('circle', {
+        cx: x, cy: y, r: '7',
+        fill: d.color, stroke: 'white', 'stroke-width': '1.2', opacity: '0.95'
+      }));
+      const t = svgEl('text', {
+        x, y: y + 2.5, 'text-anchor': 'middle',
+        'font-size': '6', fill: 'white',
+        'font-weight': 'bold', 'font-family': 'IBM Plex Mono'
+      });
+      t.textContent = d.emoji;
+      svg.appendChild(t);
+    }
+
+    const isLeft = cell.cx < W / 2;
+
+    // Chromatid positions — chrA track (top), split left and right
+    const chrALeft  = cell.cx - offset;
+    const chrARight = cell.cx + offset;
+    // Chromatid positions — chrB track (bottom), split left and right
+    const chrBLeft  = cell.cx - offset;
+    const chrBRight = cell.cx + offset;
+
+    // Spindle fibers from each pole to its chromatid
+    [
+      [pL, chrALeft,  trackTop],
+      [pR, chrARight, trackTop],
+      [pL, chrBLeft,  trackBot],
+      [pR, chrBRight, trackBot],
+    ].forEach(([pole, tx, ty]) => {
+      svg.appendChild(svgEl('line', {
+        x1: pole.x, y1: pole.y,
+        x2: tx, y2: ty,
+        stroke: '#c0392b', 'stroke-width': '1', opacity: '0.35', 'stroke-dasharray': '4 3'
+      }));
+    });
+
+    // Determine which chromosome keys and gene keys belong to this cell
+    const [chrA, chrB] = [cell.chrA, cell.chrB];
+    const [topKeys, botKeys] = isLeft
+      ? [['1M-top', '1M-bot'], ['2M-top', '2M-bot']]
+      : [['1P-top', '1P-bot'], ['2P-top', '2P-bot']];
+
+    // Draw chromatids — rod shaped, one per direction per track
+    drawChromatid(chrALeft,  trackTop, chrA, -1);  // chrA → left pole
+    drawChromatid(chrARight, trackTop, chrA,  1);  // chrA → right pole
+    drawChromatid(chrBLeft,  trackBot, chrB, -1);  // chrB → left pole
+    drawChromatid(chrBRight, trackBot, chrB,  1);  // chrB → right pole
+
+    // Gene dots — each chromatid carries the same gene (identical sister copies)
+    // top gene sits in upper half of rod, bot gene in lower half
+    dotGeneA2(chrALeft,       trackTop - 14, topKeys[0]);
+    dotGeneA2(chrALeft,       trackTop + 14, topKeys[1]);
+    dotGeneA2(chrARight,      trackTop - 14, topKeys[0]);
+    dotGeneA2(chrARight,      trackTop + 14, topKeys[1]);
+    dotGeneA2(chrBLeft,       trackBot - 14, botKeys[0]);
+    dotGeneA2(chrBLeft,       trackBot + 14, botKeys[1]);
+    dotGeneA2(chrBRight,      trackBot - 14, botKeys[0]);
+    dotGeneA2(chrBRight,      trackBot + 14, botKeys[1]);
+
+    // Direction arrows per chromatid pair
+    [
+      { x: cell.cx - offset / 2, y: trackTop, a: '←' },
+      { x: cell.cx + offset / 2, y: trackTop, a: '→' },
+      { x: cell.cx - offset / 2, y: trackBot, a: '←' },
+      { x: cell.cx + offset / 2, y: trackBot, a: '→' },
+    ].forEach(({ x, y, a }) => {
+      const t = svgEl('text', {
+        x, y,
+        'text-anchor': 'middle', 'font-size': '14',
+        fill: 'rgba(192,57,43,0.55)'
+      });
+      t.textContent = a;
+      svg.appendChild(t);
+    });
+  });
+
+  addLabel(svg, W / 2, 14,
+    'Sister chromatids split at centromere — each becomes its own chromosome',
+    '#c0392b', '9');
+  break;
+}
     case 'telophase2': {
-      const positions = [
-        { cx: W*0.18, cy: H*0.3, chrA: '1M', chrB: '2M' },
-        { cx: W*0.18, cy: H*0.7, chrA: '1M', chrB: '2M' },
-        { cx: W*0.82, cy: H*0.3, chrA: '1P', chrB: '2P' },
-        { cx: W*0.82, cy: H*0.7, chrA: '1P', chrB: '2P' },
-      ];
-      const labels = ['Cell 1','Cell 2','Cell 3','Cell 4'];
-      positions.forEach((pos, i) => {
-        drawCellMembrane(svg, pos.cx, pos.cy, 90, 75, i<2?'#1a7a4a':'#0f7f8c');
-        drawChromosome(svg, pos.cx-14, pos.cy, pos.chrA, true, 'vertical', 0.7);
-        drawChromosome(svg, pos.cx+14, pos.cy, pos.chrB, true, 'vertical', 0.7);
-        addLabel(svg, pos.cx, pos.cy+60, labels[i], i<2?'#1a7a4a':'#0f7f8c', '9');
+  // Per-cell layout config — offsets and tilts break perfect symmetry
+  const cellDefs = [
+    { cx: W*0.185, cy: H*0.29, chrA: '1M', chrB: '2M',
+      rot: -6,  dxA: -18, dyA: -8,  rotA: -14,
+               dxB:  18, dyB:  6,   rotB:  10, color: '#1a7a4a', stroke: '#4caf78' },
+    { cx: W*0.21,  cy: H*0.72, chrA: '1M', chrB: '2M',
+      rot:  8,  dxA: -16, dyA: -8,  rotA:  16,
+               dxB:  18, dyB:  6,   rotB:  -8, color: '#1a7a4a', stroke: '#4caf78' },
+    { cx: W*0.79,  cy: H*0.30, chrA: '1P', chrB: '2P',
+      rot:  5,  dxA: -18, dyA: -8,  rotA: -12,
+               dxB:  18, dyB:  4,   rotB:  15, color: '#0f7f8c', stroke: '#3db5c2' },
+    { cx: W*0.815, cy: H*0.73, chrA: '1P', chrB: '2P',
+      rot: -9,  dxA: -18, dyA: -10, rotA:  18,
+               dxB:  16, dyB:  8,   rotB: -13, color: '#0f7f8c', stroke: '#3db5c2' },
+  ];
+  const cellLabels = ['Cell 1', 'Cell 2', 'Cell 3', 'Cell 4'];
+
+  cellDefs.forEach((cell, i) => {
+    const { cx, cy, rot, color, stroke } = cell;
+
+    // ── Outer cell membrane — ellipse tilted per cell ──────────
+    // rx/ry vary slightly per cell to avoid uniformity
+    const orx = 84 + (i % 2) * 4;
+    const ory = 74 + ((i + 1) % 2) * 5;
+    svg.appendChild(svgEl('ellipse', {
+      cx, cy, rx: orx, ry: ory,
+      fill:       `${color}08`,
+      stroke:     color,
+      'stroke-width':    '2',
+      'stroke-dasharray': '6 3.5',
+      transform:  `rotate(${rot},${cx},${cy})`
+    }));
+
+    // ── Nuclear envelope — inset, clearly distinct from outer ──
+    const nrx = orx * 0.60, nry = ory * 0.60;
+    const nox = cx + (i % 2 === 0 ? -2 : 2);   // slight offset from center
+    const noy = cy + (i < 2 ? -2 : 2);
+    svg.appendChild(svgEl('ellipse', {
+      cx: nox, cy: noy, rx: nrx, ry: nry,
+      fill:       `${color}10`,
+      stroke:     color,
+      'stroke-width':    '1.5',
+      'stroke-dasharray': '4 3',
+      transform:  `rotate(${rot},${nox},${noy})`
+    }));
+
+    // ── Rod-shaped chromatid helper ────────────────────────────
+    // Each chromatid is positioned off-center and rotated per cellDef
+    function drawRodChromatid(dx, dy, deg, chrColor, chrStroke) {
+      const px = cx + dx, py = cy + dy;
+      const W2 = 14, H2 = 52;
+      const grp = svgEl('g', {
+        transform: `translate(${px},${py}) rotate(${deg})`
       });
-      addLabel(svg, W/2, 20, '4 haploid daughter cells complete', '#1a7a4a', '11');
-      break;
+      grp.appendChild(svgEl('rect', {
+        x: -W2/2, y: -H2/2, width: W2, height: H2,
+        rx: W2/2, ry: W2/2,
+        fill: chrColor, stroke: chrStroke,
+        'stroke-width': '1.2', opacity: '0.88'
+      }));
+      // centromere stub — subtle band at mid-rod
+      grp.appendChild(svgEl('rect', {
+        x: -W2/2, y: -3, width: W2, height: 6,
+        rx: '2', fill: 'rgba(255,255,255,0.22)'
+      }));
+      svg.appendChild(grp);
     }
+
+    // Chromatid A (from chrA chromosome)
+    const cA = CHR_COLORS[cell.chrA];
+    drawRodChromatid(cell.dxA, cell.dyA, cell.rotA, cA.fill, cA.stroke);
+
+    // Chromatid B (from chrB chromosome)
+    const cB = CHR_COLORS[cell.chrB];
+    drawRodChromatid(cell.dxB, cell.dyB, cell.rotB, cB.fill, cB.stroke);
+
+    // ── Gene dots — offset to match chromatid positions ────────
+    function dotGeneT2(x, y, key) {
+      const gene = state.genes[key];
+      if (!gene) return;
+      const d = GENE_DATA[gene];
+      svg.appendChild(svgEl('circle', {
+        cx: x, cy: y, r: '7',
+        fill: d.color, stroke: 'white',
+        'stroke-width': '1.2', opacity: '0.92'
+      }));
+      const t = svgEl('text', {
+        x, y: y + 2.5, 'text-anchor': 'middle',
+        'font-size': '6', fill: 'white',
+        'font-weight': 'bold', 'font-family': 'IBM Plex Mono'
+      });
+      t.textContent = d.emoji;
+      svg.appendChild(t);
+    }
+
+    const isLeft = i < 2;
+    const [topKeyA, botKeyA] = isLeft
+      ? ['1M-top', '1M-bot'] : ['1P-top', '1P-bot'];
+    const [topKeyB, botKeyB] = isLeft
+      ? ['2M-top', '2M-bot'] : ['2P-top', '2P-bot'];
+
+    // Dot positions derived from chromatid offsets
+    dotGeneT2(cx + cell.dxA - 1, cy + cell.dyA - 18, topKeyA);
+    dotGeneT2(cx + cell.dxA - 1, cy + cell.dyA + 18, botKeyA);
+    dotGeneT2(cx + cell.dxB + 1, cy + cell.dyB - 18, topKeyB);
+    dotGeneT2(cx + cell.dxB + 1, cy + cell.dyB + 18, botKeyB);
+
+    // ── Cell label below outer membrane ────────────────────────
+    addLabel(svg, cx, cy + ory + 16, cellLabels[i], color, '9');
+  });
+
+  // ── Faint axis lines (visual separation, not connecting cells)
+  svg.appendChild(svgEl('line', {
+    x1: W/2, y1: 20, x2: W/2, y2: H - 20,
+    stroke: 'rgba(26,122,74,0.08)', 'stroke-width': '1', 'stroke-dasharray': '4 6'
+  }));
+  svg.appendChild(svgEl('line', {
+    x1: 40, y1: H/2, x2: W - 40, y2: H/2,
+    stroke: 'rgba(26,122,74,0.08)', 'stroke-width': '1', 'stroke-dasharray': '4 6'
+  }));
+
+  addLabel(svg, W/2, 14, '4 haploid daughter cells — meiosis complete', '#1a7a4a', '10');
+  break;
+}
   }
 }
 
